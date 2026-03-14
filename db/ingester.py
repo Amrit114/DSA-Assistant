@@ -4,7 +4,7 @@ from db.schema import ensure_columns
 from db.cleaner import clean_text
 from embeddings.embedder import get_embedding_model
 
-embedding_model = get_embedding_model()
+
 
 
 def store_documents(chunks) -> dict:
@@ -13,6 +13,7 @@ def store_documents(chunks) -> dict:
     Prints live progress every 50 chunks with timing info.
     Returns a timing summary dict.
     """
+    embedding_model = get_embedding_model()
     ensure_columns()
 
     total_chunks  = len(chunks)

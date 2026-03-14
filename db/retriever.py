@@ -1,7 +1,7 @@
 from db.connection import get_connection
 from embeddings.embedder import get_embedding_model
 
-embedding_model = get_embedding_model()
+
 
 
 def similarity_search(query: str, top_k: int = 7) -> str:
@@ -10,6 +10,7 @@ def similarity_search(query: str, top_k: int = 7) -> str:
     Chunks with similarity distance above THRESHOLD are rejected.
     This prevents off-topic questions from getting any context.
     """
+    embedding_model = get_embedding_model()
     query_vector = embedding_model.embed_query(query)
 
     conn = get_connection()
