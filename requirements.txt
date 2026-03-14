@@ -9,5 +9,8 @@ pgvector
 langchain-groq
 python-dotenv
 langchain-huggingface
+langchain-text-splitters
 flask 
 flask-cors
+pyspellchecker
+gunicorn

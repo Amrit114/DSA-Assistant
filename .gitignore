@@ -1,11 +1,14 @@
-# Python-generated files
 __pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-
-# Virtual environments
-.venv
+*.pyc
+*.pyo
+*.pyd
 .env
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+.DS_Store
+chat_history.db
+ingested_hashes.txt

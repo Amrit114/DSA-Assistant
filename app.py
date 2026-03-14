@@ -1,45 +1,41 @@
-from flask import Flask, request, jsonify, render_template
+import os
+from flask import Flask, jsonify
 from flask_cors import CORS
 
-from loaders.pdf_loader import load_and_split_pdfs_from_directory
-from db.vector_store import store_documents
-from rag.rag_pipeline import rag_answer
-from config import PDF_DIR
+from database import init_db
+from routes.ui           import ui_bp
+from routes.chat         import chat_bp
+from routes.ingest       import ingest_bp
+from routes.sessions     import sessions_bp
+from routes.auth_routes  import auth_bp
 
-app = Flask(__name__)
+# ── Create Flask app ──────────────────────────────────
+app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app)
 
+# ── Secret key for session cookies ───────────────────
+app.secret_key = os.environ.get("SECRET_KEY", "dsa-assistant-secret-2024")
 
+# ── Initialize SQLite database ────────────────────────
+init_db()
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+# ── Register all blueprints ───────────────────────────
+app.register_blueprint(auth_bp)
+app.register_blueprint(ui_bp)
+app.register_blueprint(chat_bp)
+app.register_blueprint(ingest_bp)
+app.register_blueprint(sessions_bp)
 
+# ── Error handlers ────────────────────────────────────
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Route not found"}), 404
 
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({"error": "Internal server error"}), 500
 
-@app.route("/ingest", methods=["POST"])
-def ingest():
-    chunks = load_and_split_pdfs_from_directory(PDF_DIR)
-    store_documents(chunks)
-    return jsonify({"status": "PDFs ingested successfully"})
-
-
-
-@app.route("/ask", methods=["POST"])
-def ask():
-    data = request.get_json(force=True)
-    question = data.get("question", "").strip()
-
-    if not question:
-        return jsonify({"error": "Question required"}), 400
-
-    answer = rag_answer(question)
-    return jsonify({
-        "question": question,
-        "answer": answer
-    })
-
-
-
+# ── Run ───────────────────────────────────────────────
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)

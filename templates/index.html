@@ -1,22 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>DSA Book RAG</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DSA Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script src="/static/theme.js"></script>
+    <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-    <div class="container">
-        <h1>📘 DSA Book Assistant</h1>
 
-        <div class="input-wrapper">
-            <textarea id="question" placeholder="Ask me anything about Data Structures & Algorithms..."></textarea>
+<!-- ░░░░ SIDEBAR ░░░░ -->
+<aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-brand">
+        <div class="brand-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
         </div>
-        
-        <button onclick="askQuestion()">Ask Question</button>
-
-        <div id="answer"></div>
+        <div class="brand-text">
+            <span class="brand-name">DSA<span class="brand-accent">Book</span></span>
+            <span class="brand-sub">Assistant · RAG</span>
+        </div>
     </div>
 
-    <script src="/static/script.js"></script>
+    <button class="new-chat-btn" onclick="startNewChat()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Conversation
+    </button>
+
+    <div class="sidebar-search">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Search conversations..." oninput="filterSessions(this.value)" />
+    </div>
+
+    <div class="sessions-scroll" id="sessionsList">
+        <div class="sessions-empty">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <p>No conversations yet</p>
+        </div>
+    </div>
+
+    <div class="sidebar-footer">
+        <!-- User profile card -->
+        <div class="user-card">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <div class="user-info">
+                <span class="user-name" id="sidebarUsername">Loading...</span>
+                <span class="user-email" id="sidebarEmail"></span>
+            </div>
+            <a href="/logout" class="logout-btn" title="Logout">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </a>
+        </div>
+
+        <button class="footer-btn ingest-btn" id="ingestBtn" onclick="ingestPDFs()">
+            <span class="ingest-icon" id="ingestIcon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            </span>
+            <span id="ingestLabel">Index PDFs</span>
+        </button>
+        <button class="footer-btn theme-btn" onclick="toggleTheme()">
+            <span data-theme-icon></span>
+            <span data-theme-label>Light Mode</span>
+        </button>
+        <button class="footer-btn danger-btn" onclick="clearAllChats()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6m4-6v6"/><path d="M9 6V4h6v2"/></svg>
+            Clear All
+        </button>
+    </div>
+</aside>
+
+<!-- ░░░░ MAIN ░░░░ -->
+<div class="main-wrapper" id="mainWrapper">
+
+    <!-- Topbar (mobile) -->
+    <header class="topbar">
+        <button class="topbar-btn" onclick="toggleSidebar()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="topbar-logo">DSA<span>Book</span></span>
+        <button class="topbar-btn" onclick="startNewChat()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+    </header>
+
+    <!-- Chat area -->
+    <div class="chat-area" id="chatArea">
+
+        <!-- Welcome screen -->
+        <div class="welcome-screen" id="emptyState">
+            <div class="welcome-glow"></div>
+            <div class="welcome-content">
+                <div class="welcome-badge">RAG · Powered by your textbook</div>
+                <h1 class="welcome-title">Ask Your<br/><span>DSA Book</span></h1>
+                <p class="welcome-sub">Search for any concept, algorithm, or data structure from your indexed textbook instantly.</p>
+                <div class="welcome-chips">
+                    <button class="chip" onclick="askSuggestion('Explain binary search trees with examples')">🌲 Binary Search Trees</button>
+                    <button class="chip" onclick="askSuggestion('What is time complexity and Big O notation?')">⏱️ Time Complexity</button>
+                    <button class="chip" onclick="askSuggestion('How does quicksort work step by step?')">⚡ Quicksort Algorithm</button>
+                    <button class="chip" onclick="askSuggestion('Difference between stack and queue with use cases')">📦 Stack vs Queue</button>
+                    <button class="chip" onclick="askSuggestion('Explain dynamic programming with examples')">🔄 Dynamic Programming</button>
+                    <button class="chip" onclick="askSuggestion('What is graph traversal BFS and DFS?')">🕸️ BFS & DFS</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="messages-wrap" id="chatContainer"></div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-zone">
+        <div class="input-shell" id="inputShell">
+            <textarea
+                id="questionInput"
+                placeholder="Ask anything about data structures & algorithms..."
+                rows="1"
+                onkeydown="handleKeyPress(event)"
+            ></textarea>
+            <button id="sendButton" onclick="askQuestion()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+            </button>
+        </div>
+        <p class="input-hint"><kbd>Enter</kbd> send &nbsp;·&nbsp; <kbd>Shift+Enter</kbd> new line</p>
+    </div>
+</div>
+
+<!-- Mobile overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="/static/script.js"></script>
 </body>
 </html>

@@ -1,37 +1,39 @@
 from pathlib import Path
-from langchain_community.document_loaders import  PyMuPDFLoader 
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from loaders.filter   import filter_new_files
+from loaders.loader   import load_pdfs
+from loaders.splitter import split_documents
 
 
-def load_and_split_pdfs_from_directory(pdf_directory):
+def load_and_split_pdfs_from_directory(pdf_directory, already_ingested: dict = None) -> dict:
+    """
+    Main entry point — loads and splits only NEW PDFs.
+    Skips files already ingested in PostgreSQL.
+
+    Returns:
+        {
+            "chunks"        : list of document chunks (new files only),
+            "new_files"     : filenames that were processed,
+            "skipped_files" : filenames already in DB,
+        }
+    """
+    if already_ingested is None:
+        already_ingested = {}
+
     
-    all_documents = []
-    pdf_dir = Path(pdf_directory)
-
-    
-    pdf_files = list(pdf_dir.glob("**/*.pdf"))
+    pdf_files = list(Path(pdf_directory).glob("**/*.pdf"))
     print(f"Found {len(pdf_files)} PDF files")
 
-    for pdf_file in pdf_files:
-        print(f"Processing: {pdf_file.name}")
-        try:
-            loader = PyMuPDFLoader(str(pdf_file))
-            documents = loader.load()
+    
+    new_files_paths, skipped_files = filter_new_files(pdf_files, already_ingested)
 
-            
-            for doc in documents:
-                doc.metadata["source_file"] = pdf_file.name
-                doc.metadata["source_path"] = str(pdf_file)
-
-            all_documents.extend(documents)
-
-        except Exception as e:
-            print(f"Error loading {pdf_file.name}: {e}")
+   
+    documents, new_files = load_pdfs(new_files_paths)
 
     
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=100
-    )
+    chunks = split_documents(documents)
 
-    return splitter.split_documents(all_documents)
+    return {
+        "chunks":        chunks,
+        "new_files":     new_files,
+        "skipped_files": skipped_files,
+    }

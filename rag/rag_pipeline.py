@@ -1,25 +1,20 @@
 from db.vector_store import similarity_search
-from llm.groq_llm import get_llm
+from rag.spell_correct import correct_query
+from rag.llm_runner import run_llm
 
-llm = get_llm()
+REFUSAL = "I could not find information about this in the indexed textbooks."
 
-def rag_answer(question):
-    context = similarity_search(question)
 
-    prompt = f"""
-    You are a helpful tutor.
-    Use ONLY the given context.
-    If the answer is not in the context, say:
-    "This information is not available in the provided data."
+def rag_answer(question: str) -> str:
+    # Step 1 — Fix spelling before searching
+    corrected_question = correct_query(question)
 
-    Context:
-    {context}
+    # Step 2 — Search using corrected question
+    context = similarity_search(corrected_question)
 
-    Question:
-    {question}
+    # Step 3 — If DB returned nothing, refuse immediately (no LLM call)
+    if not context or not context.strip():
+        return REFUSAL
 
-    Answer:
-    """
-
-    response = llm.invoke(prompt)
-    return response.content
+    # Step 4 — Run LLM with original question for display
+    return run_llm(context, question)
