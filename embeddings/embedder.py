@@ -1,21 +1,19 @@
-from langchain_huggingface import HuggingFaceEmbeddings
-from config import EMBEDDING_MODEL
+from langchain_groq import ChatGroq
+from langchain_community.embeddings import HuggingFaceEmbeddings
+import os
 
-# Model is None at startup — loads only when first used
-_embedding_model = None
+# Use a tiny model that loads fast
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 
+_model = None
 
 def get_embedding_model():
-    """
-    Returns the embedding model.
-    Loads it on first call only — not at startup.
-    This saves RAM on Render free tier.
-    """
-    global _embedding_model
-    if _embedding_model is None:
-        _embedding_model = HuggingFaceEmbeddings(
+    global _model
+    if _model is None:
+        _model = HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL,
             model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": True}
+            encode_kwargs={"normalize_embeddings": True},
+            cache_folder="/tmp/hf_cache"   # ← cache to /tmp on Render
         )
-    return _embedding_model
+    return _model

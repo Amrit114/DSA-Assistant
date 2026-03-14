@@ -3,10 +3,10 @@ langchain-core
 langchain-community
 pypdf
 pymupdf
-sentence-transformers
 psycopg2-binary 
 pgvector
 langchain-groq
+groq
 python-dotenv
 langchain-huggingface
 langchain-text-splitters
