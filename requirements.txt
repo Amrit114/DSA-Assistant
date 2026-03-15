@@ -1,3 +1,6 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.1.0+cpu
+sentence-transformers==2.7.0
 langchain
 langchain-core
 langchain-community
@@ -14,5 +17,4 @@ flask
 flask-cors
 pyspellchecker
 gunicorn
-sentence-transformers
 gevent
