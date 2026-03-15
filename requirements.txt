@@ -17,4 +17,3 @@ flask
 flask-cors
 pyspellchecker
 gunicorn
-gevent
