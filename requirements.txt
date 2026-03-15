@@ -15,3 +15,4 @@ flask-cors
 pyspellchecker
 gunicorn
 sentence-transformers
+gevent
