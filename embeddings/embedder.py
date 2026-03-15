@@ -1,11 +1,10 @@
-from langchain_groq import ChatGroq
-from langchain_community.embeddings import HuggingFaceEmbeddings
 import os
+from langchain_huggingface import HuggingFaceEmbeddings
 
-# Use a tiny model that loads fast
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 
 _model = None
+
 
 def get_embedding_model():
     global _model
@@ -14,6 +13,6 @@ def get_embedding_model():
             model_name=EMBEDDING_MODEL,
             model_kwargs={"device": "cpu"},
             encode_kwargs={"normalize_embeddings": True},
-            cache_folder="/tmp/hf_cache"   # ← cache to /tmp on Render
+            cache_folder="/tmp/hf_cache"
         )
     return _model

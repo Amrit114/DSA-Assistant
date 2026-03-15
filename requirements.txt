@@ -14,3 +14,4 @@ flask
 flask-cors
 pyspellchecker
 gunicorn
+sentence-transformers
