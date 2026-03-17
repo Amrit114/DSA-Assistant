@@ -11,7 +11,7 @@
 </head>
 <body>
 
-<!-- ░░░░ SIDEBAR ░░░░ -->
+
 <aside class="sidebar" id="sidebar">
 
     <div class="sidebar-brand">
@@ -42,7 +42,7 @@
     </div>
 
     <div class="sidebar-footer">
-        <!-- User profile card -->
+        
         <div class="user-card">
             <div class="user-avatar" id="userAvatar">?</div>
             <div class="user-info">
@@ -71,10 +71,10 @@
     </div>
 </aside>
 
-<!-- ░░░░ MAIN ░░░░ -->
+
 <div class="main-wrapper" id="mainWrapper">
 
-    <!-- Topbar (mobile) -->
+    
     <header class="topbar">
         <button class="topbar-btn" onclick="toggleSidebar()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -85,10 +85,10 @@
         </button>
     </header>
 
-    <!-- Chat area -->
+    
     <div class="chat-area" id="chatArea">
 
-        <!-- Welcome screen -->
+        
         <div class="welcome-screen" id="emptyState">
             <div class="welcome-glow"></div>
             <div class="welcome-content">
@@ -106,11 +106,11 @@
             </div>
         </div>
 
-        <!-- Messages -->
+        
         <div class="messages-wrap" id="chatContainer"></div>
     </div>
 
-    <!-- Input -->
+    
     <div class="input-zone">
         <div class="input-shell" id="inputShell">
             <textarea
@@ -130,10 +130,10 @@
     </div>
 </div>
 
-<!-- Mobile overlay -->
+
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-<!-- Toast -->
+
 <div class="toast" id="toast"></div>
 
 <script src="/static/script.js"></script>

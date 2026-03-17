@@ -318,9 +318,7 @@ function removeLoading(id) {
     if (el) el.remove();
 }
 
-// =====================================================
-//  INGEST
-// =====================================================
+
 async function ingestPDFs() {
     const btn   = document.getElementById('ingestBtn');
     const icon  = document.getElementById('ingestIcon');
@@ -345,9 +343,7 @@ async function ingestPDFs() {
     label.textContent = 'Index PDFs';
 }
 
-// =====================================================
-//  TOAST
-// =====================================================
+
 let toastTimer = null;
 function showToast(message, type = 'info', duration = 3000) {
     toastEl.textContent = message;
@@ -356,9 +352,7 @@ function showToast(message, type = 'info', duration = 3000) {
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), duration);
 }
 
-// =====================================================
-//  INPUT HELPERS
-// =====================================================
+
 questionInput.addEventListener('input', function () {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 140) + 'px';
@@ -375,36 +369,27 @@ function scrollBottom() {
     chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-// =====================================================
-//  MARKDOWN FORMATTER — Claude/ChatGPT style
-// =====================================================
+
 function formatMessage(text) {
 
-    // Step 1 — strip stray markdown fence wrappers
+    
     text = text.replace(/^```markdown\n?/gm, '');
     text = text.replace(/^```\s*$/gm, '');
 
-    // Step 2 — extract and replace code blocks FIRST (protect from other replacements)
-    // ─────────────────────────────────────────────────────────────────────────────
-    // CHANGED: improved regex + code normalizer so compressed single-line code
-    // (LLM sometimes sends all code on one line) is properly expanded before display
-    // ─────────────────────────────────────────────────────────────────────────────
+    
     const codeBlocks = [];
     let ci = 0;
 
     text = text.replace(/```(\w+)?\s*\n?([\s\S]*?)```[^\n]*/g, (_, lang, code) => {
-        // ── Normalize compressed code ──────────────────────────────────────────
-        // When LLM sends code as one long line, restore line breaks at natural
-        // boundaries so the code block renders readable like Claude / ChatGPT
+        
         code = code
-            .replace(/\} /g,    '}\n')      // closing brace → new line
-            .replace(/\{ /g,    '{\n')      // opening brace content → new line
-            .replace(/; /g,     ';\n')      // statement end → new line
-            .replace(/\/\/ /g,  '\n// ')    // inline comment → own line
-            .replace(/\n{3,}/g, '\n\n')     // max 2 blank lines
+            .replace(/\} /g,    '}\n')      
+            .replace(/\{ /g,    '{\n')      
+            .replace(/; /g,     ';\n')      
+            .replace(/\/\/ /g,  '\n// ')    
+            .replace(/\n{3,}/g, '\n\n')     
             .trim();
-        // ── End normalize ──────────────────────────────────────────────────────
-
+        
         const id      = 'code-' + ci;
         const lbl     = lang ? lang.toLowerCase() : 'code';
         const lblShow = lang ? lang.toUpperCase()  : 'CODE';
@@ -413,28 +398,28 @@ function formatMessage(text) {
         return `%%CODEBLOCK_${ci - 1}%%`;
     });
 
-    // Step 3 — blockquotes  (> text)
+    
     text = text.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
     text = text.replace(/^> (.+)$/gm,    '<blockquote>$1</blockquote>');
 
-    // Step 4 — headings  (must be block-level, own line)
+    
     text = text.replace(/^# (.+)$/gm,   '<h1 class="md-h1">$1</h1>');
     text = text.replace(/^## (.+)$/gm,  '<h2 class="md-h2">$1</h2>');
     text = text.replace(/^### (.+)$/gm, '<h3 class="md-h3">$1</h3>');
 
-    // Step 5 — horizontal rules
+    
     text = text.replace(/^---+$/gm, '<hr class="md-hr">');
 
-    // Step 6 — bold and italic
+    
     text = text.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
     text = text.replace(/\*\*([^*]+)\*\*/g,     '<strong>$1</strong>');
     text = text.replace(/__([^_]+)__/g,           '<strong>$1</strong>');
     text = text.replace(/\*([^*\n]+)\*/g,        '<em>$1</em>');
 
-    // Step 7 — inline code
+    
     text = text.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
 
-    // Step 8 — numbered lists (collect consecutive lines)
+    
     text = text.replace(/((?:^\d+\.[ \t].+$\n?)+)/gm, match => {
         const items = match.trim().split(/\n(?=\d+\.)/);
         const lis   = items.map(i => {
@@ -444,7 +429,7 @@ function formatMessage(text) {
         return `<ol>${lis}</ol>`;
     });
 
-    // Step 9 — bullet lists (- or *)
+    
     text = text.replace(/((?:^[ \t]*[\*\-][ \t].+$\n?)+)/gm, match => {
         const items = match.trim().split(/\n(?=[ \t]*[\*\-])/);
         const lis   = items.map(i => {
@@ -454,7 +439,7 @@ function formatMessage(text) {
         return `<ul>${lis}</ul>`;
     });
 
-    // Step 10 — wrap remaining plain text paragraphs
+    
     const lines = text.split(/\n\n+/);
     text = lines.map(block => {
         block = block.trim();
@@ -465,11 +450,7 @@ function formatMessage(text) {
         return `<p>${block.replace(/\n/g, '<br>')}</p>`;
     }).join('\n');
 
-    // Step 11 — restore code blocks with full styling + copy button
-    // ─────────────────────────────────────────────────────────────────────────────
-    // CHANGED: code is now displayed with white-space:pre so every line break
-    // and indentation from Step 2 normalization renders correctly in the browser
-    // ─────────────────────────────────────────────────────────────────────────────
+    
     codeBlocks.forEach((cb, idx) => {
         const escaped = escapeHtml(cb.code);
         const html =
@@ -527,9 +508,7 @@ function formatTimeLabel(iso) {
     return d.toLocaleDateString();
 }
 
-// =====================================================
-//  CURRENT USER — load from /api/me and fill sidebar
-// =====================================================
+
 async function loadCurrentUser() {
     try {
         const res  = await fetch('/api/me', { headers: HEADERS });
@@ -552,9 +531,7 @@ async function loadCurrentUser() {
     }
 }
 
-// =====================================================
-//  INIT
-// =====================================================
+
 loadCurrentUser();
 fetchSessions();
 questionInput.focus();

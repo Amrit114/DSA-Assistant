@@ -80,7 +80,7 @@ def delete_all_sessions():
         return jsonify({"error": "Login required"}), 401
 
     conn = get_db()
-    # Only delete THIS user's sessions
+    
     rows = conn.execute(
         "SELECT id FROM sessions WHERE user_id=?", (user_id,)
     ).fetchall()

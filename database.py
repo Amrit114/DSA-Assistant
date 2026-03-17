@@ -13,7 +13,7 @@ def get_db():
 def init_db():
     conn = get_db()
 
-    # Users table
+    
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,7 +24,7 @@ def init_db():
         )
     """)
 
-    # Sessions linked to a user
+    
     conn.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
             id         TEXT PRIMARY KEY,
@@ -36,7 +36,7 @@ def init_db():
         )
     """)
 
-    # Messages
+    
     conn.execute("""
         CREATE TABLE IF NOT EXISTS messages (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,7 +48,7 @@ def init_db():
         )
     """)
 
-    # Password reset OTP tokens
+    
     conn.execute("""
         CREATE TABLE IF NOT EXISTS reset_tokens (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,

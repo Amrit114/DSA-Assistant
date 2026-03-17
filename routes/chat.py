@@ -12,7 +12,7 @@ def ask_api():
     if not check_api_key(request):
         return jsonify({"error": "Unauthorized"}), 401
 
-    # Get logged in user
+    
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Login required"}), 401
@@ -30,7 +30,7 @@ def ask_api():
     conn   = get_db()
     cursor = conn.cursor()
 
-    # Create or update session — now linked to user_id
+    
     if not session_id:
         session_id = str(uuid.uuid4())
         title      = question[:60] + ("..." if len(question) > 60 else "")

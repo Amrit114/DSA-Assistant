@@ -12,21 +12,21 @@ def ingest_api():
     if not check_api_key(request):
         return jsonify({"error": "Unauthorized"}), 401
 
-    # Step 1 — Get files already in PostgreSQL
+    
     already_ingested = get_ingested_files()
 
-    # Step 2 — Load only new files
+    
     result        = load_and_split_pdfs_from_directory(PDF_DIR, already_ingested)
     chunks        = result["chunks"]
     new_files     = result["new_files"]
     skipped_files = result["skipped_files"]
 
-    # Step 3 — Store new chunks and get timing
+    
     timing = None
     if chunks:
         timing = store_documents(chunks)
 
-    # Step 4 — Build response
+    
     response = {}
 
     if new_files:

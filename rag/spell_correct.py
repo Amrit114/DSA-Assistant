@@ -29,15 +29,15 @@ def correct_query(question: str) -> str:
     words     = question.lower().split()
     corrected = []
     for word in words:
-        # Skip numbers and short words — don't correct them
+        
         if word.isdigit() or len(word) <= 2:
             corrected.append(word)
             continue
-        # Check DSA keyword map first
+        
         if word in DSA_KEYWORDS:
             corrected.append(DSA_KEYWORDS[word])
             continue
-        # Then pyspellchecker
+        
         fixed = spell.correction(word)
         corrected.append(fixed if fixed else word)
     return " ".join(corrected)

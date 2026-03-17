@@ -1,7 +1,4 @@
-// =====================================================
-//  theme.js — shared across ALL pages
-//  Reads/writes localStorage('dsa_theme')
-// =====================================================
+
 
 const THEME_KEY = 'dsa_theme';
 
@@ -13,7 +10,7 @@ function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_KEY, theme);
 
-    // Update all toggle buttons/icons on this page
+    
     document.querySelectorAll('[data-theme-icon]').forEach(el => {
         el.innerHTML = theme === 'light' ? moonIcon() : sunIcon();
     });
@@ -34,5 +31,5 @@ function moonIcon() {
     return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
 }
 
-// Apply immediately on page load — prevents flash
+
 applyTheme(getTheme());

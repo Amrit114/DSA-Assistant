@@ -16,7 +16,7 @@ def run_llm(context: str, question: str) -> str:
     response = llm.invoke(prompt)
     answer   = response.content
 
-    # If LLM said it couldn't find info, return clean refusal only
+    
     if REFUSAL in answer:
         return REFUSAL
 

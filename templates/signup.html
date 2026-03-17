@@ -31,7 +31,7 @@
             display: flex;
         }
 
-        /* ── LEFT PANEL ── */
+        
         .left-panel {
             width: 45%;
             background: var(--card);
@@ -99,7 +99,7 @@
             box-shadow: 0 0 8px var(--red-glow);
         }
 
-        /* ── RIGHT PANEL ── */
+        
         .right-panel {
             flex: 1;
             display: flex;
@@ -191,7 +191,7 @@
 
         .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* Error / Success */
+        
         .alert {
             padding: 12px 16px;
             border-radius: 9px;
@@ -259,7 +259,7 @@
         [data-theme="light"] .divider::before,
         [data-theme="light"] .divider::after { background: var(--border); }
 
-        /* light mode modal */
+        
         [data-theme="light"] .modal-box { background: #ffffff; border-color: #e0e0e0; }
         [data-theme="light"] .modal-close { background: #f0f0f0; color: #666; }
         [data-theme="light"] .otp-inputs input { background: #f0f0f0; border-color: #ddd; color: #111; }
@@ -349,11 +349,11 @@
         const btn       = document.getElementById('signupBtn');
         const alertBox  = document.getElementById('alertBox');
 
-        // Clear alert
+        
         alertBox.style.display = 'none';
         alertBox.className = 'alert';
 
-        // Client side validation
+        
         if (!username || !email || !password || !confirm) {
             return showAlert('All fields are required.', 'error');
         }
@@ -402,7 +402,7 @@
         box.style.display = 'block';
     }
 
-    // Allow Enter key
+    
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') handleSignup();
     });

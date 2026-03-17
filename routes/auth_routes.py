@@ -27,7 +27,7 @@ def signup_api():
     email    = data.get("email", "").strip()
     password = data.get("password", "").strip()
 
-    # Basic validation
+    
     if not username or not email or not password:
         return jsonify({"error": "All fields are required."}), 400
 
@@ -40,20 +40,20 @@ def signup_api():
     if "@" not in email:
         return jsonify({"error": "Invalid email address."}), 400
 
-    # Create user
+    
     result = create_user(username, email, password)
 
     if not result["success"]:
         return jsonify({"error": result["error"]}), 409
 
-    # Send welcome email in background thread so signup doesn't block
+    
     threading.Thread(
         target=send_welcome_email,
         args=(email, username, password),
         daemon=True
     ).start()
 
-    # Auto login after signup
+    
     user = result["user"]
     session["user_id"]  = user["id"]
     session["username"] = user["username"]
@@ -110,7 +110,7 @@ def me():
     })
 
 
-# ── FORGOT PASSWORD ROUTES ────────────────────────────
+
 
 @auth_bp.route("/forgot-password", methods=["GET"])
 def forgot_password_page():
@@ -131,10 +131,10 @@ def forgot_password_api():
         return jsonify({"error": "Valid email is required."}), 400
 
     if not email_exists(email):
-        # Don't reveal if email exists — security best practice
+        
         return jsonify({"message": "If that email is registered, an OTP has been sent."})
 
-    # Fetch username for email personalisation
+    
     conn = get_db()
     row  = conn.execute("SELECT username FROM users WHERE email=?", (email,)).fetchone()
     conn.close()

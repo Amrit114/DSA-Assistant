@@ -4,9 +4,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
-# Load from environment variables
-SMTP_EMAIL    = os.environ.get("SMTP_EMAIL")     # your Gmail address
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")  # Gmail App Password
+
+SMTP_EMAIL    = os.environ.get("SMTP_EMAIL")     
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")  
 
 
 def send_welcome_email(to_email: str, username: str, password: str):
@@ -20,7 +20,7 @@ def send_welcome_email(to_email: str, username: str, password: str):
 
     subject = "Welcome to DSA Assistant 📚"
 
-    # HTML email body
+    
     html_body = f"""
     <!DOCTYPE html>
     <html>

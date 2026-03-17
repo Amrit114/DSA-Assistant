@@ -75,9 +75,9 @@ def create_otp(email: str) -> str:
     expires_at = (datetime.utcnow() + timedelta(minutes=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     conn = get_db()
-    # Invalidate old OTPs for this email
+    
     conn.execute("UPDATE reset_tokens SET used=1 WHERE email=?", (email.strip().lower(),))
-    # Insert new OTP
+    
     conn.execute(
         "INSERT INTO reset_tokens (email, otp, expires_at, used) VALUES (?, ?, ?, 0)",
         (email.strip().lower(), otp, expires_at)
@@ -129,12 +129,12 @@ def reset_password(email: str, otp: str, new_password: str) -> dict:
     try:
         now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        # Update password
+        
         conn.execute(
             "UPDATE users SET password=? WHERE email=?",
             (hash_password(new_password), email.strip().lower())
         )
-        # Mark OTP as used
+        
         conn.execute(
             "UPDATE reset_tokens SET used=1 WHERE email=? AND otp=?",
             (email.strip().lower(), otp.strip())
