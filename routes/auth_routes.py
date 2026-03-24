@@ -122,7 +122,7 @@ def forgot_password_api():
     """Step 1 — User enters email, we send OTP."""
     from db.user_store import email_exists, create_otp
     from mailer import send_otp_email
-    from database import get_db
+    from db.connection import get_connection
 
     data  = request.get_json(force=True)
     email = data.get("email", "").strip().lower()
@@ -135,9 +135,16 @@ def forgot_password_api():
         return jsonify({"message": "If that email is registered, an OTP has been sent."})
 
     
-    conn = get_db()
-    row  = conn.execute("SELECT username FROM users WHERE email=?", (email,)).fetchone()
+    conn = get_connection()
+    cur  = conn.cursor()
+    cur.execute(
+        "SELECT username FROM users WHERE email=%s",
+        (email,)
+    )
+    row = cur.fetchone()
+    cur.close()
     conn.close()
+    
     username = row["username"] if row else "User"
 
     otp = create_otp(email)
