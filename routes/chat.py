@@ -1,7 +1,7 @@
 import uuid
 from flask import Blueprint, request, jsonify, session
 from auth import check_api_key, get_current_user
-from database import get_db, now_iso
+from database import get_connection, now_iso
 from rag.rag_pipeline import rag_answer
 
 chat_bp = Blueprint("chat", __name__)
@@ -27,7 +27,7 @@ def ask_api():
     answer = rag_answer(question)
     ts     = now_iso()
 
-    conn   = get_db()
+    conn   = get_connection()
     cursor = conn.cursor()
 
     
@@ -35,33 +35,34 @@ def ask_api():
         session_id = str(uuid.uuid4())
         title      = question[:60] + ("..." if len(question) > 60 else "")
         cursor.execute(
-            "INSERT INTO sessions (id, user_id, title, created_at, updated_at) VALUES (?,?,?,?,?)",
+            "INSERT INTO sessions (id, user_id, title, created_at, updated_at) VALUES (%s,%s,%s,%s,%s)",
             (session_id, user_id, title, ts, ts)
         )
     else:
-        row = cursor.execute(
-            "SELECT id FROM sessions WHERE id=? AND user_id=?",
+        cursor.execute(
+            "SELECT id FROM sessions WHERE id=%s AND user_id=%s",
             (session_id, user_id)
-        ).fetchone()
+        )
+        row = cursor.fetchone()
 
         if not row:
             title = question[:60] + ("..." if len(question) > 60 else "")
             cursor.execute(
-                "INSERT INTO sessions (id, user_id, title, created_at, updated_at) VALUES (?,?,?,?,?)",
+                "INSERT INTO sessions (id, user_id, title, created_at, updated_at) VALUES (%s,%s,%s,%s,%s)",
                 (session_id, user_id, title, ts, ts)
             )
         else:
             cursor.execute(
-                "UPDATE sessions SET updated_at=? WHERE id=? AND user_id=?",
+                "UPDATE sessions SET updated_at=%s WHERE id=%s AND user_id=%s",
                 (ts, session_id, user_id)
             )
 
     cursor.execute(
-        "INSERT INTO messages (session_id, role, content, created_at) VALUES (?,?,?,?)",
+        "INSERT INTO messages (session_id, role, content, created_at) VALUES (%s,%s,%s,%s)",
         (session_id, "user", question, ts)
     )
     cursor.execute(
-        "INSERT INTO messages (session_id, role, content, created_at) VALUES (?,?,?,?)",
+        "INSERT INTO messages (session_id, role, content, created_at) VALUES (%s,%s,%s,%s)",
         (session_id, "assistant", answer, ts)
     )
 

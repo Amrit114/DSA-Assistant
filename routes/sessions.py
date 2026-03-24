@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from auth import check_api_key
-from database import get_db
+from database import get_connection
 
 sessions_bp = Blueprint("sessions", __name__)
 
@@ -14,11 +14,13 @@ def get_sessions():
     if not user_id:
         return jsonify({"error": "Login required"}), 401
 
-    conn = get_db()
-    rows = conn.execute(
-        "SELECT id, title, created_at, updated_at FROM sessions WHERE user_id=? ORDER BY updated_at DESC",
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, title, created_at, updated_at FROM sessions WHERE user_id=%s ORDER BY updated_at DESC",
         (user_id,)
-    ).fetchall()
+    )
+    rows = cur.fetchall()
     conn.close()
 
     return jsonify({"sessions": [dict(r) for r in rows]})
@@ -33,20 +35,24 @@ def get_session_messages(session_id):
     if not user_id:
         return jsonify({"error": "Login required"}), 401
 
-    conn    = get_db()
-    sess    = conn.execute(
-        "SELECT * FROM sessions WHERE id=? AND user_id=?",
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM sessions WHERE id=%s AND user_id=%s",
         (session_id, user_id)
-    ).fetchone()
+    )
+    sess = cur.fetchone()
 
     if not sess:
         conn.close()
         return jsonify({"error": "Session not found"}), 404
 
-    messages = conn.execute(
-        "SELECT role, content, created_at FROM messages WHERE session_id=? ORDER BY id ASC",
+    cur.execute(
+        "SELECT role, content, created_at FROM messages WHERE session_id=%s ORDER BY id ASC",
         (session_id,)
-    ).fetchall()
+    )
+    messages = cur.fetchall()
     conn.close()
 
     return jsonify({"session": dict(sess), "messages": [dict(m) for m in messages]})
@@ -58,12 +64,14 @@ def delete_session(session_id):
         return jsonify({"error": "Unauthorized"}), 401
 
     user_id = session.get("user_id")
-    conn = get_db()
-    conn.execute(
-        "DELETE FROM messages WHERE session_id=?", (session_id,)
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM messages WHERE session_id=%s", (session_id,)
     )
-    conn.execute(
-        "DELETE FROM sessions WHERE id=? AND user_id=?", (session_id, user_id)
+    cur.execute(
+        "DELETE FROM sessions WHERE id=%s AND user_id=%s", (session_id, user_id)
     )
     conn.commit()
     conn.close()
@@ -79,14 +87,18 @@ def delete_all_sessions():
     if not user_id:
         return jsonify({"error": "Login required"}), 401
 
-    conn = get_db()
+    conn = get_connection()
+    cur = conn.cursor()
     
-    rows = conn.execute(
-        "SELECT id FROM sessions WHERE user_id=?", (user_id,)
-    ).fetchall()
+    cur.execute(
+        "SELECT id FROM sessions WHERE user_id=%s", (user_id,)
+    )
+    rows = cur.fetchall()
+
     for row in rows:
-        conn.execute("DELETE FROM messages WHERE session_id=?", (row["id"],))
-    conn.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
+        cur.execute("DELETE FROM messages WHERE session_id=%s", (row["id"],))
+
+    cur.execute("DELETE FROM sessions WHERE user_id=%s", (user_id,))
     conn.commit()
     conn.close()
     return jsonify({"status": "All deleted"})
@@ -104,9 +116,11 @@ def rename_session(session_id):
     if not title:
         return jsonify({"error": "Title required"}), 400
 
-    conn = get_db()
-    conn.execute(
-        "UPDATE sessions SET title=? WHERE id=? AND user_id=?",
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE sessions SET title=%s WHERE id=%s AND user_id=%s",
         (title, session_id, user_id)
     )
     conn.commit()

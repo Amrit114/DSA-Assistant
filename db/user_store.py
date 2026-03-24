@@ -2,7 +2,7 @@ import hashlib
 import random
 import string
 from datetime import datetime, timedelta
-from database import get_db, now_iso
+from database import get_connection, now_iso
 
 
 def hash_password(password: str) -> str:
@@ -11,18 +11,20 @@ def hash_password(password: str) -> str:
 
 
 def create_user(username: str, email: str, password: str) -> dict:
-    conn = get_db()
+    conn = get_connection()
+    cur = conn.cursor()
     try:
-        conn.execute(
-            "INSERT INTO users (username, email, password, created_at) VALUES (?, ?, ?, ?)",
+        cur.execute(
+            "INSERT INTO users (username, email, password, created_at) VALUES (%s,%s,%s,%s)",
             (username.strip(), email.strip().lower(), hash_password(password), now_iso())
         )
         conn.commit()
 
-        user = conn.execute(
-            "SELECT id, username, email FROM users WHERE email = ?",
+        cur.execute(
+            "SELECT id, username, email FROM users WHERE email = %s",
             (email.strip().lower(),)
-        ).fetchone()
+        )
+        user = cur.fetchone()
 
         return {"success": True, "user": dict(user)}
 
@@ -39,12 +41,14 @@ def create_user(username: str, email: str, password: str) -> dict:
 
 
 def get_user_by_email(email: str, password: str) -> dict:
-    conn = get_db()
+    conn = get_connection()
+    cur = conn.cursor()
     try:
-        user = conn.execute(
-            "SELECT id, username, email FROM users WHERE email = ? AND password = ?",
+        cur.execute(
+            "SELECT id, username, email FROM users WHERE email = %s AND password = %s",
             (email.strip().lower(), hash_password(password))
-        ).fetchone()
+        )
+        user = cur.fetchone()
 
         if user:
             return {"success": True, "user": dict(user)}
@@ -56,30 +60,29 @@ def get_user_by_email(email: str, password: str) -> dict:
 
 def email_exists(email: str) -> bool:
     """Check if an email is registered."""
-    conn = get_db()
+    conn = get_connection()
+    cur = conn.cursor()
     try:
-        row = conn.execute(
-            "SELECT id FROM users WHERE email = ?", (email.strip().lower(),)
-        ).fetchone()
+        cur.execute(
+            "SELECT id FROM users WHERE email = %s", (email.strip().lower(),)
+        )
+        row = cur.fetchone()
         return row is not None
     finally:
         conn.close()
 
 
 def create_otp(email: str) -> str:
-    """
-    Generate a 6-digit OTP, store it in reset_tokens, return the OTP.
-    Expires in 10 minutes. Invalidates any previous OTPs for this email.
-    """
-    otp        = ''.join(random.choices(string.digits, k=6))
+    otp = ''.join(random.choices(string.digits, k=6))
     expires_at = (datetime.utcnow() + timedelta(minutes=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    conn = get_db()
+    conn = get_connection()
+    cur = conn.cursor()
     
-    conn.execute("UPDATE reset_tokens SET used=1 WHERE email=?", (email.strip().lower(),))
+    cur.execute("UPDATE reset_tokens SET used=1 WHERE email=%s", (email.strip().lower(),))
     
-    conn.execute(
-        "INSERT INTO reset_tokens (email, otp, expires_at, used) VALUES (?, ?, ?, 0)",
+    cur.execute(
+        "INSERT INTO reset_tokens (email, otp, expires_at, used) VALUES (%s, %s, %s, 0)",
         (email.strip().lower(), otp, expires_at)
     )
     conn.commit()
@@ -89,21 +92,19 @@ def create_otp(email: str) -> str:
 
 
 def verify_otp(email: str, otp: str) -> dict:
-    """
-    Verify the OTP for an email.
-    Returns { "success": True } or { "success": False, "error": "..." }
-    """
-    conn = get_db()
+    conn = get_connection()
+    cur = conn.cursor()
     try:
         now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-        row = conn.execute(
+        cur.execute(
             """
             SELECT id FROM reset_tokens
-            WHERE email=? AND otp=? AND used=0 AND expires_at > ?
+            WHERE email=%s AND otp=%s AND used=0 AND expires_at > %s
             ORDER BY id DESC LIMIT 1
             """,
             (email.strip().lower(), otp.strip(), now)
-        ).fetchone()
+        )
+        row = cur.fetchone()
 
         if not row:
             return {"success": False, "error": "Invalid or expired OTP."}
@@ -114,10 +115,6 @@ def verify_otp(email: str, otp: str) -> dict:
 
 
 def reset_password(email: str, otp: str, new_password: str) -> dict:
-    """
-    Verify OTP and update password.
-    Marks token as used after success.
-    """
     verify = verify_otp(email, otp)
     if not verify["success"]:
         return verify
@@ -125,18 +122,18 @@ def reset_password(email: str, otp: str, new_password: str) -> dict:
     if len(new_password) < 6:
         return {"success": False, "error": "Password must be at least 6 characters."}
 
-    conn = get_db()
+    conn = get_connection()
+    cur = conn.cursor()
     try:
         now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        
-        conn.execute(
-            "UPDATE users SET password=? WHERE email=?",
+        cur.execute(
+            "UPDATE users SET password=%s WHERE email=%s",
             (hash_password(new_password), email.strip().lower())
         )
         
-        conn.execute(
-            "UPDATE reset_tokens SET used=1 WHERE email=? AND otp=?",
+        cur.execute(
+            "UPDATE reset_tokens SET used=1 WHERE email=%s AND otp=%s",
             (email.strip().lower(), otp.strip())
         )
         conn.commit()
@@ -150,11 +147,13 @@ def reset_password(email: str, otp: str, new_password: str) -> dict:
 
 
 def get_user_by_id(user_id: int):
-    conn = get_db()
+    conn = get_connection()
+    cur = conn.cursor()
     try:
-        user = conn.execute(
-            "SELECT id, username, email FROM users WHERE id = ?", (user_id,)
-        ).fetchone()
+        cur.execute(
+            "SELECT id, username, email FROM users WHERE id = %s", (user_id,)
+        )
+        user = cur.fetchone()
         return dict(user) if user else None
     finally:
         conn.close()
