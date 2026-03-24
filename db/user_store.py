@@ -30,11 +30,11 @@ def create_user(username: str, email: str, password: str) -> dict:
 
     except Exception as e:
         error = str(e)
-        if "UNIQUE constraint failed: users.email" in error:
+        if "users_email_key" in error:
             return {"success": False, "error": "Email already registered."}
-        if "UNIQUE constraint failed: users.username" in error:
+        if "users_username_key" in error:
             return {"success": False, "error": "Username already taken."}
-        return {"success": False, "error": "Registration failed. Please try again."}
+        return {"success": False, "error": error}
 
     finally:
         conn.close()
@@ -50,9 +50,9 @@ def get_user_by_email(email: str, password: str) -> dict:
         )
         user = cur.fetchone()
 
-        if user:
-            return {"success": True, "user": dict(user)}
-        return {"success": False, "error": "Invalid email or password."}
+        if not user:
+            return {"success": False, "error": "Invalid email or password."}
+        return {"success": True, "user": dict(user)}
 
     finally:
         conn.close()

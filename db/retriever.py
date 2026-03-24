@@ -36,11 +36,20 @@ def similarity_search(query: str, top_k: int = 7) -> str:
     THRESHOLD = 0.88
 
     context_parts = []
-    for content, source_file, file_hash, distance in results:
+    for row in results:
+        try:
+            distance = float(row["distance"])   # 🔥 IMPORTANT
+        except:
+            continue
+
         if distance > THRESHOLD:
             continue  
+        content     = row["content"]
+        source_file = row["source_file"]
+
         src   = source_file if source_file else "Unknown Source"
         label = f"[Source: {src}]"
+
         context_parts.append(f"{label}\n{content}")
 
     return "\n\n---\n\n".join(context_parts)

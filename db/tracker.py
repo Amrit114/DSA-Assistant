@@ -18,4 +18,8 @@ def get_ingested_files() -> dict:
     cur.close()
     conn.close()
 
-    return {row[0]: row[1] for row in rows if row[0] and row[1]}
+    return {
+        row["source_file"]: row["file_hash"]
+        for row in rows
+        if row["source_file"] and row["file_hash"]
+    }
