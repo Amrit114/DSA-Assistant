@@ -104,6 +104,7 @@
             align-items: center;
             justify-content: center;
             padding: 40px 60px;
+            background: var(--bg);
         }
 
         .form-box {
@@ -386,17 +387,21 @@
             --muted: #666666;
         }
 
-        [data-theme="light"] body { background: var(--bg); }
+        [data-theme="light"] body { background: var(--bg); color: var(--text); }
         [data-theme="light"] .left-panel { background: var(--card); border-color: var(--border); }
         [data-theme="light"] .right-panel { background: var(--bg); }
         [data-theme="light"] .form-group input { background: var(--input-bg); border-color: var(--border); color: var(--text); }
         [data-theme="light"] .form-group input::placeholder { color: #aaa; }
         [data-theme="light"] .form-box h2 { color: var(--text); }
+        [data-theme="light"] .form-box p { color: var(--muted); }
         [data-theme="light"] .panel-title { color: var(--text); }
+        [data-theme="light"] .panel-desc { color: var(--muted); }
+        [data-theme="light"] .panel-feature { color: var(--muted); }
         [data-theme="light"] .alert.error { background: rgba(229,57,53,0.08); }
         [data-theme="light"] .divider { color: #aaa; }
         [data-theme="light"] .divider::before,
         [data-theme="light"] .divider::after { background: var(--border); }
+        [data-theme="light"] .forgot-link { color: #888; }
 
         
         [data-theme="light"] .modal-box { background: #ffffff; border-color: #e0e0e0; }
@@ -423,6 +428,97 @@
         }
         .theme-float:hover { border-color: var(--red); color: var(--red); transform: scale(1.1); }
 
+        /* ── Entrance animations ── */
+        .left-panel {
+            animation: panelSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes panelSlideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        .form-box {
+            animation: formFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+        }
+
+        @keyframes formFadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Enhanced input fields */
+        .form-group input {
+            transition: all 0.25s ease;
+        }
+
+        .form-group input:focus {
+            transform: scale(1.005);
+        }
+
+        /* Animated left panel features */
+        .panel-feature {
+            animation: featureIn 0.5s ease-out both;
+        }
+
+        .panel-feature:nth-child(1) { animation-delay: 0.2s; }
+        .panel-feature:nth-child(2) { animation-delay: 0.3s; }
+        .panel-feature:nth-child(3) { animation-delay: 0.4s; }
+        .panel-feature:nth-child(4) { animation-delay: 0.5s; }
+
+        @keyframes featureIn {
+            from { opacity: 0; transform: translateX(-16px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Pulsing dot animation */
+        .panel-feature .dot {
+            animation: dotPulse 2.5s ease-in-out infinite;
+        }
+
+        .panel-feature:nth-child(2) .dot { animation-delay: 0.4s; }
+        .panel-feature:nth-child(3) .dot { animation-delay: 0.8s; }
+        .panel-feature:nth-child(4) .dot { animation-delay: 1.2s; }
+
+        @keyframes dotPulse {
+            0%,100% { box-shadow: 0 0 4px rgba(229,57,53,0.4); }
+            50%      { box-shadow: 0 0 12px rgba(229,57,53,0.7); }
+        }
+
+        /* Submit button shine */
+        .submit-btn {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 60%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.4s ease;
+        }
+
+        .submit-btn:hover::after:not(:disabled) { left: 150%; }
+
+        /* Left panel glow animation */
+        .left-panel::after {
+            content: '';
+            position: absolute;
+            width: 300px; height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(229,57,53,0.06) 0%, transparent 70%);
+            bottom: -60px; right: -60px;
+            pointer-events: none;
+            animation: panelGlow 5s ease-in-out infinite;
+        }
+
+        @keyframes panelGlow {
+            0%,100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
         </style>
 </head>
 <body>

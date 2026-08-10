@@ -22,6 +22,7 @@ const sendButton    = document.getElementById('sendButton');
 const sessionsList  = document.getElementById('sessionsList');
 const toastEl       = document.getElementById('toast');
 const chatArea      = document.getElementById('chatArea');
+const scrollBtn     = document.getElementById('scrollBottomBtn');
 
 // =====================================================
 //  THEME
@@ -40,6 +41,21 @@ function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
     document.getElementById('sidebarOverlay').classList.toggle('show');
 }
+
+function toggleSidebarCollapse() {
+    const sidebar = document.getElementById('sidebar');
+    const wrapper = document.getElementById('mainWrapper');
+    const collapsed = sidebar.classList.toggle('collapsed');
+    localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+}
+
+// Restore sidebar collapse state on load
+(function() {
+    if (localStorage.getItem('sidebarCollapsed') === '1') {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.add('collapsed');
+    }
+})();
 
 function closeSidebarMobile() {
     if (window.innerWidth <= 800) {
@@ -272,9 +288,12 @@ function renderMessage(text, role, scroll = true) {
 
     const avatar   = role === 'user' ? 'U' : '⚡';
     const sender   = role === 'user' ? 'You' : 'DSA Assistant';
+    const now      = new Date();
+    const timeStr  = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     const bodyHtml = role === 'assistant'
-        ? `<div class="msg-sender">${sender}</div><div class="msg-content">${formatMessage(text)}</div>`
-        : `<div class="msg-sender">${sender}</div><div class="msg-content">${escapeHtml(text)}</div>`;
+        ? `<div class="msg-sender">${sender}</div><div class="msg-content">${formatMessage(text)}</div><div class="msg-time">${timeStr}</div>`
+        : `<div class="msg-sender">${sender}</div><div class="msg-content">${escapeHtml(text)}</div><div class="msg-time">${timeStr}</div>`;
 
     div.innerHTML = `
         <div class="message-inner">
@@ -301,9 +320,19 @@ function showLoading() {
                 <div class="msg-sender">DSA Assistant</div>
                 <div class="msg-content">
                     <div class="loading">
-                        <div class="loading-dot"></div>
-                        <div class="loading-dot"></div>
-                        <div class="loading-dot"></div>
+                        <div class="loading-label">
+                            <div class="loading-dots">
+                                <div class="loading-dot"></div>
+                                <div class="loading-dot"></div>
+                                <div class="loading-dot"></div>
+                            </div>
+                            <span>Thinking…</span>
+                        </div>
+                        <div class="loading-skeleton">
+                            <div class="skeleton-bar"></div>
+                            <div class="skeleton-bar"></div>
+                            <div class="skeleton-bar"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -366,110 +395,172 @@ function handleKeyPress(e) {
 }
 
 function scrollBottom() {
-    chatArea.scrollTop = chatArea.scrollHeight;
+    chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
+    if (scrollBtn) scrollBtn.classList.remove('visible');
 }
+
+/* Show/hide scroll-to-bottom button based on scroll position */
+chatArea.addEventListener('scroll', () => {
+    if (!scrollBtn) return;
+    const distFromBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight;
+    if (distFromBottom > 120) {
+        scrollBtn.classList.add('visible');
+    } else {
+        scrollBtn.classList.remove('visible');
+    }
+});
 
 
 function formatMessage(text) {
 
-    
-    text = text.replace(/^```markdown\n?/gm, '');
-    text = text.replace(/^```\s*$/gm, '');
-
-    
+    // ═══════════════════════════════════════════════════════════
+    //  STEP 1 — Extract ALL fenced code blocks into placeholders
+    //           so nothing inside them gets processed as markdown.
+    // ═══════════════════════════════════════════════════════════
     const codeBlocks = [];
-    let ci = 0;
+    const idPrefix   = 'cb-' + Date.now() + '-';   // unique across sessions
+    let   ci         = 0;
 
-    text = text.replace(/```(\w+)?\s*\n?([\s\S]*?)```[^\n]*/g, (_, lang, code) => {
-        
+    // Strip stray ```markdown and lone ``` lines first
+    text = text.replace(/^```markdown\s*\n?/gim, '');
+
+    // Extract every fenced block (greedy-safe with [^`] trick)
+    text = text.replace(/```([\w+-]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+        lang = (lang || '').trim();
         code = code
-            .replace(/\} /g,    '}\n')      
-            .replace(/\{ /g,    '{\n')      
-            .replace(/; /g,     ';\n')      
-            .replace(/\/\/ /g,  '\n// ')    
-            .replace(/\n{3,}/g, '\n\n')     
-            .trim();
-        
-        const id      = 'code-' + ci;
-        const lbl     = lang ? lang.toLowerCase() : 'code';
-        const lblShow = lang ? lang.toUpperCase()  : 'CODE';
+            .replace(/\r\n/g, '\n')       // CRLF → LF
+            .replace(/\t/g,   '    ')     // tabs  → 4 spaces
+            .trimEnd();                   // remove trailing blank lines only
+
+        const id      = idPrefix + ci;
+        const lbl     = (lang || 'code').toLowerCase();
+        const lblShow = (lang || 'CODE').toUpperCase();
         codeBlocks.push({ id, lbl, lblShow, code });
         ci++;
-        return `%%CODEBLOCK_${ci - 1}%%`;
+        // Surround placeholder with newlines so paragraph-split never joins it
+        return '\n\n%%CB' + (ci - 1) + '%%\n\n';
     });
 
-    
+    // ═══════════════════════════════════════════════════════════
+    //  STEP 2 — Process markdown on the REMAINING (non-code) text
+    // ═══════════════════════════════════════════════════════════
+
+    // Blockquotes
     text = text.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
     text = text.replace(/^> (.+)$/gm,    '<blockquote>$1</blockquote>');
 
-    
-    text = text.replace(/^# (.+)$/gm,   '<h1 class="md-h1">$1</h1>');
-    text = text.replace(/^## (.+)$/gm,  '<h2 class="md-h2">$1</h2>');
-    text = text.replace(/^### (.+)$/gm, '<h3 class="md-h3">$1</h3>');
+    // Headings
+    text = text.replace(/^#### (.+)$/gm, '<h4 class="md-h4">$1</h4>');
+    text = text.replace(/^### (.+)$/gm,  '<h3 class="md-h3">$1</h3>');
+    text = text.replace(/^## (.+)$/gm,   '<h2 class="md-h2">$1</h2>');
+    text = text.replace(/^# (.+)$/gm,    '<h1 class="md-h1">$1</h1>');
 
-    
+    // Horizontal rule
     text = text.replace(/^---+$/gm, '<hr class="md-hr">');
 
-    
-    text = text.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
-    text = text.replace(/\*\*([^*]+)\*\*/g,     '<strong>$1</strong>');
-    text = text.replace(/__([^_]+)__/g,           '<strong>$1</strong>');
-    text = text.replace(/\*([^*\n]+)\*/g,        '<em>$1</em>');
+    // Bold / Italic
+    text = text.replace(/\*\*\*([^*\n]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+    text = text.replace(/\*\*([^*\n]+)\*\*/g,     '<strong>$1</strong>');
+    text = text.replace(/__([^_\n]+)__/g,          '<strong>$1</strong>');
+    text = text.replace(/\*([^*\n]+)\*/g,          '<em>$1</em>');
 
-    
-    text = text.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+    // Inline code  (only single-line, no accidental multi-line capture)
+    text = text.replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
 
-    
-    text = text.replace(/((?:^\d+\.[ \t].+$\n?)+)/gm, match => {
-        const items = match.trim().split(/\n(?=\d+\.)/);
-        const lis   = items.map(i => {
-            const content = i.replace(/^\d+\.[ \t]+/, '');
-            return `<li>${content}</li>`;
-        }).join('');
+    // Ordered list  (must start at beginning of line)
+    text = text.replace(/((?:^\d+[.)]\s.+(?:\n|$))+)/gm, match => {
+        const lis = match.trim()
+            .split(/\n(?=\d+[.)]\s)/)
+            .map(i => `<li>${i.replace(/^\d+[.)]\s+/, '')}</li>`)
+            .join('');
         return `<ol>${lis}</ol>`;
     });
 
-    
-    text = text.replace(/((?:^[ \t]*[\*\-][ \t].+$\n?)+)/gm, match => {
-        const items = match.trim().split(/\n(?=[ \t]*[\*\-])/);
-        const lis   = items.map(i => {
-            const content = i.replace(/^[ \t]*[\*\-][ \t]+/, '');
-            return `<li>${content}</li>`;
-        }).join('');
+    // Unordered list
+    text = text.replace(/((?:^[ \t]*[-*+]\s.+(?:\n|$))+)/gm, match => {
+        const lis = match.trim()
+            .split(/\n(?=[ \t]*[-*+]\s)/)
+            .map(i => `<li>${i.replace(/^[ \t]*[-*+]\s+/, '')}</li>`)
+            .join('');
         return `<ul>${lis}</ul>`;
     });
 
-    
-    const lines = text.split(/\n\n+/);
-    text = lines.map(block => {
-        block = block.trim();
-        if (!block) return '';
-        // already HTML — don't wrap
-        if (/^<(h[1-6]|ul|ol|blockquote|hr|div|%%CO)/.test(block)) return block;
-        // single line with no HTML — wrap in <p>
-        return `<p>${block.replace(/\n/g, '<br>')}</p>`;
-    }).join('\n');
+    // ═══════════════════════════════════════════════════════════
+    //  STEP 3 — Paragraph-wrap plain text blocks
+    //           Skip HTML blocks and code placeholders
+    // ═══════════════════════════════════════════════════════════
+    text = text
+        .split(/\n{2,}/)
+        .map(block => {
+            block = block.trim();
+            if (!block) return '';
+            // Already HTML
+            if (/^<(h[1-6]|ul|ol|blockquote|hr|div|p)/.test(block)) return block;
+            // Code block placeholder — never wrap
+            if (/^%%CB\d+%%$/.test(block)) return block;
+            // Block that contains a placeholder (mixed line) — emit as-is
+            if (/%%CB\d+%%/.test(block)) return block;
+            return `<p>${block.replace(/\n/g, '<br>')}</p>`;
+        })
+        .join('\n');
 
-    
+    // ═══════════════════════════════════════════════════════════
+    //  STEP 4 — Build and inject rendered code blocks
+    // ═══════════════════════════════════════════════════════════
+    const langColors = {
+        python: '#3572A5', javascript: '#f1e05a', js:   '#f1e05a',
+        ts:     '#2b7489', typescript:  '#2b7489', java: '#b07219',
+        cpp:    '#f34b7d', c:           '#555555', cs:   '#178600',
+        go:     '#00ADD8', rust:        '#dea584', ruby: '#701516',
+        html:   '#e34c26', css:         '#563d7c', sql:  '#336791',
+        bash:   '#89e051', sh:          '#89e051', json: '#c9510c',
+        xml:    '#0060ac', php:         '#4F5D95', swift:'#ffac45',
+        kotlin: '#A97BFF', dart:        '#00B4AB', yaml: '#cb171e',
+        r:      '#198ce7', scala:       '#c22d40', pseudocode:'#9e9e9e',
+        algo:   '#9e9e9e', text:        '#888888', code: '#e53935',
+    };
+
     codeBlocks.forEach((cb, idx) => {
-        const escaped = escapeHtml(cb.code);
+        const escaped   = escapeHtml(cb.code);
+        const lineCount = cb.code.split('\n').length;
+        const langColor = langColors[cb.lbl] || '#e53935';
+
+        // Line-numbered rows
+        const rows = escaped.split('\n').map((line, i) =>
+            `<span class="code-row">` +
+            `<span class="line-num">${i + 1}</span>` +
+            `<span class="line-code">${line || ' '}</span>` +
+            `</span>`
+        ).join('\n');
+
         const html =
             `<div class="code-block">` +
-            `<div class="code-block-header">` +
-            `<span class="code-lang">${cb.lblShow}</span>` +
-            `<button class="copy-btn" onclick="copyCode('${cb.id}')">` +
-            `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">` +
-            `<rect x="9" y="9" width="13" height="13" rx="2"/>` +
-            `<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>` +
-            `</svg>Copy</button>` +
-            `</div>` +
-            `<pre style="margin:0;padding:16px;overflow-x:auto;">` +
-            `<code id="${cb.id}" class="code-content lang-${cb.lbl}" ` +
-            `style="background:transparent;color:#f8f8f2;font-family:'JetBrains Mono',monospace;` +
-            `font-size:13px;line-height:1.75;white-space:pre;display:block;">${escaped}</code>` +
-            `</pre>` +
+              `<div class="code-block-header">` +
+                `<div class="code-traffic-lights">` +
+                  `<span class="traffic-dot red"></span>` +
+                  `<span class="traffic-dot yellow"></span>` +
+                  `<span class="traffic-dot green"></span>` +
+                `</div>` +
+                `<span class="code-lang">` +
+                  `<span class="lang-dot" style="background:${langColor};box-shadow:0 0 6px ${langColor}55;"></span>` +
+                  `${cb.lblShow}` +
+                `</span>` +
+                `<div class="code-header-right">` +
+                  `<span class="code-line-count">${lineCount} line${lineCount !== 1 ? 's' : ''}</span>` +
+                  `<button class="copy-btn" onclick="copyCode('${cb.id}')" id="copybtn-${cb.id}">` +
+                    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">` +
+                      `<rect x="9" y="9" width="13" height="13" rx="2"/>` +
+                      `<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>` +
+                    `</svg>Copy` +
+                  `</button>` +
+                `</div>` +
+              `</div>` +
+              `<div class="code-body">` +
+                `<pre class="code-pre"><code id="${cb.id}" class="code-content lang-${cb.lbl}">${rows}</code></pre>` +
+              `</div>` +
             `</div>`;
-        text = text.replace(`%%CODEBLOCK_${idx}%%`, html);
+
+        text = text.replace(`%%CB${idx}%%`, html);
     });
 
     return text;
@@ -477,17 +568,27 @@ function formatMessage(text) {
 
 function copyCode(codeId) {
     const el = document.getElementById(codeId);
-    navigator.clipboard.writeText(el.textContent).then(() => {
-        const btn = event.target.closest('button');
+    // Extract just the code lines (not line numbers)
+    const lineEls = el.querySelectorAll('.line-code');
+    const text = lineEls.length
+        ? Array.from(lineEls).map(s => s.textContent).join('\n')
+        : el.textContent;
+
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copybtn-' + codeId);
+        if (!btn) return;
         const original = btn.innerHTML;
-        btn.textContent = '✓ Copied!';
+        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!`;
         btn.style.color = '#22c55e';
+        btn.style.borderColor = '#22c55e';
         setTimeout(() => {
             btn.innerHTML = original;
             btn.style.color = '';
+            btn.style.borderColor = '';
         }, 2000);
     });
 }
+
 
 function escapeHtml(text) {
     const d = document.createElement('div');
