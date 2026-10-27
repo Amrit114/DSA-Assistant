@@ -1,13 +1,29 @@
 import hashlib
-import random
-import string
+import hmac
+import secrets
 from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
 from database import get_connection, now_iso
+
+MAX_OTP_ATTEMPTS    = 5   # wrong guesses before an OTP is burned
+MAX_OTPS_PER_WINDOW = 3   # OTPs per email per 10-minute window
 
 
 def hash_password(password: str) -> str:
-    """Simple SHA-256 hash for password storage."""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Salted, slow hash (werkzeug scrypt) for password storage."""
+    return generate_password_hash(password)
+
+
+def _is_legacy_hash(stored: str) -> bool:
+    # Accounts created before the switch hold a bare unsalted SHA-256 hex digest.
+    return "$" not in stored
+
+
+def verify_password(stored: str, password: str) -> bool:
+    if _is_legacy_hash(stored):
+        legacy = hashlib.sha256(password.encode()).hexdigest()
+        return hmac.compare_digest(stored, legacy)
+    return check_password_hash(stored, password)
 
 
 def create_user(username: str, email: str, password: str) -> dict:
@@ -45,14 +61,23 @@ def get_user_by_email(email: str, password: str) -> dict:
     cur = conn.cursor()
     try:
         cur.execute(
-            "SELECT id, username, email FROM users WHERE email = %s AND password = %s",
-            (email.strip().lower(), hash_password(password))
+            "SELECT id, username, email, password FROM users WHERE email = %s",
+            (email.strip().lower(),)
         )
         user = cur.fetchone()
 
-        if not user:
+        if not user or not verify_password(user["password"], password):
             return {"success": False, "error": "Invalid email or password."}
-        return {"success": True, "user": dict(user)}
+
+        # Upgrade legacy SHA-256 hashes on successful login.
+        if _is_legacy_hash(user["password"]):
+            cur.execute(
+                "UPDATE users SET password=%s WHERE id=%s",
+                (hash_password(password), user["id"])
+            )
+            conn.commit()
+
+        return {"success": True, "user": {k: user[k] for k in ("id", "username", "email")}}
 
     finally:
         conn.close()
@@ -72,23 +97,34 @@ def email_exists(email: str) -> bool:
         conn.close()
 
 
-def create_otp(email: str) -> str:
-    otp = ''.join(random.choices(string.digits, k=6))
-    expires_at = (datetime.utcnow() + timedelta(minutes=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
+def create_otp(email: str):
+    """Returns a new 6-digit OTP, or None if this email hit the rate limit."""
+    email      = email.strip().lower()
+    now        = datetime.utcnow()
+    now_str    = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    expires_at = (now + timedelta(minutes=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    otp        = f"{secrets.randbelow(10**6):06d}"
 
     conn = get_connection()
     cur = conn.cursor()
-    
-    cur.execute("UPDATE reset_tokens SET used=1 WHERE email=%s", (email.strip().lower(),))
-    
-    cur.execute(
-        "INSERT INTO reset_tokens (email, otp, expires_at, used) VALUES (%s, %s, %s, 0)",
-        (email.strip().lower(), otp, expires_at)
-    )
-    conn.commit()
-    conn.close()
+    try:
+        # Unexpired rows = OTPs issued in the last 10 minutes.
+        cur.execute(
+            "SELECT COUNT(*) AS n FROM reset_tokens WHERE email=%s AND expires_at > %s",
+            (email, now_str)
+        )
+        if cur.fetchone()["n"] >= MAX_OTPS_PER_WINDOW:
+            return None
 
-    return otp
+        cur.execute("UPDATE reset_tokens SET used=1 WHERE email=%s", (email,))
+        cur.execute(
+            "INSERT INTO reset_tokens (email, otp, expires_at, used) VALUES (%s, %s, %s, 0)",
+            (email, otp, expires_at)
+        )
+        conn.commit()
+        return otp
+    finally:
+        conn.close()
 
 
 def verify_otp(email: str, otp: str) -> dict:
@@ -96,17 +132,23 @@ def verify_otp(email: str, otp: str) -> dict:
     cur = conn.cursor()
     try:
         now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        # Count the attempt atomically before comparing, so parallel guesses can't exceed the cap.
         cur.execute(
             """
-            SELECT id FROM reset_tokens
-            WHERE email=%s AND otp=%s AND used=0 AND expires_at > %s
-            ORDER BY id DESC LIMIT 1
+            UPDATE reset_tokens SET attempts = attempts + 1
+            WHERE id = (
+                SELECT id FROM reset_tokens
+                WHERE email=%s AND used=0 AND expires_at > %s
+                ORDER BY id DESC LIMIT 1
+            ) AND attempts < %s
+            RETURNING otp
             """,
-            (email.strip().lower(), otp.strip(), now)
+            (email.strip().lower(), now, MAX_OTP_ATTEMPTS)
         )
         row = cur.fetchone()
+        conn.commit()
 
-        if not row:
+        if not row or not hmac.compare_digest(row["otp"].encode(), otp.strip().encode()):
             return {"success": False, "error": "Invalid or expired OTP."}
         return {"success": True}
 

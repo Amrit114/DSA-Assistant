@@ -1,12 +1,14 @@
 from functools import wraps
-from flask import session, redirect, url_for
+from flask import session, redirect, url_for, request
+from werkzeug.exceptions import BadRequest
 
-API_KEY = "my-secret-key"
 
-
-def check_api_key(req):
-    """Check X-API-KEY header for ingest endpoint."""
-    return req.headers.get("X-API-KEY") == API_KEY
+def json_body() -> dict:
+    """Request JSON as a dict; a missing or malformed body becomes a 400 (rendered as JSON by app.py)."""
+    data = request.get_json(force=True, silent=True)
+    if not isinstance(data, dict):
+        raise BadRequest("Request body must be a JSON object.")
+    return data
 
 
 def login_required(f):

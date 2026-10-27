@@ -3,1076 +3,188 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Sign Up — DSA Assistant</title>
+    <title>Create account · DSA Assistant</title>
+    <meta name="description" content="Create a free DSA Assistant account and get textbook-grounded answers to data structures and algorithms questions."/>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cg fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='16' cy='8' r='2.6'/%3E%3Ccircle cx='9' cy='23' r='2.6'/%3E%3Ccircle cx='23' cy='23' r='2.6'/%3E%3Cpath d='M14.6 10.3 10.4 20.7M17.4 10.3l4.2 10.4'/%3E%3C/g%3E%3C/svg%3E"/>
     <script src="/static/theme.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
-    
-    <style>
-        :root {
-            --bg-dark: #0a0a0a;
-            --surface-dark: #111111;
-            --surface-hover: #1e1e1e;
-            --border-dark: #2a2a2a;
-            --text-primary: #ffffff;
-            --text-secondary: #888888;
-            --accent: #e53935;
-            --accent-hover: #ff1744;
-            --error-bg: rgba(229, 57, 53, 0.1);
-            --error-text: #ff5252;
-            --success-bg: rgba(34, 197, 94, 0.1);
-            --success-text: #4ade80;
-            --font-body: 'Outfit', sans-serif;
-            --font-display: 'Bebas Neue', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
-        
-        [data-theme="dawn"] {
-            --bg-dark: #faf5f0;
-            --surface-dark: #fefcf9;
-            --surface-hover: #f5efe8;
-            --border-dark: #e8ddd0;
-            --text-primary: #2d1f11;
-            --text-secondary: #7a6650;
-            --accent: #d4530a;
-            --accent-hover: #e86315;
-            --error-bg: rgba(212, 83, 10, 0.1);
-            --error-text: #c2410c;
-        }
-
-        [data-theme="ocean"] {
-            --bg-dark: #060d16;
-            --surface-dark: #0a1220;
-            --surface-hover: #101d33;
-            --border-dark: #152540;
-            --text-primary: #e2eaf5;
-            --text-secondary: #7b9bc0;
-            --accent: #0ea5e9;
-            --accent-hover: #38bdf8;
-            --error-bg: rgba(229, 57, 53, 0.12);
-            --error-text: #f87171;
-        }
-
-        [data-theme="arctic"],
-        [data-theme="light"] {
-            --bg-dark: #f4f7fb;
-            --surface-dark: #ffffff;
-            --surface-hover: #f0f3f8;
-            --border-dark: #e2e8f0;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --accent: #6366f1;
-            --accent-hover: #818cf8;
-            --error-bg: rgba(239, 68, 68, 0.1);
-            --error-text: #dc2626;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: var(--font-body);
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            transition: background 0.3s ease, color 0.3s ease;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Split Layout - Left Panel */
-        .left-panel {
-            flex: 1.1;
-            background: var(--surface-dark);
-            border-right: 1px solid var(--border-dark);
-            padding: 60px 80px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-            min-height: 100vh;
-            user-select: none;
-        }
-
-        .left-panel::before {
-            content: '';
-            position: absolute;
-            top: -15%;
-            left: -15%;
-            width: 70%;
-            height: 70%;
-            background: radial-gradient(circle, rgba(229, 57, 53, 0.14) 0%, transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
-            filter: blur(20px);
-        }
-
-        .left-panel::after {
-            content: '';
-            position: absolute;
-            bottom: -20%;
-            right: -20%;
-            width: 65%;
-            height: 65%;
-            background: radial-gradient(circle, rgba(229, 57, 53, 0.08) 0%, transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
-            filter: blur(30px);
-        }
-
-        .panel-logo {
-            font-family: var(--font-display);
-            font-size: 36px;
-            letter-spacing: 2px;
-            color: var(--text-primary);
-            position: relative;
-            z-index: 2;
-        }
-
-        .panel-logo span {
-            color: var(--accent);
-        }
-
-        .panel-hero {
-            margin: 40px 0;
-            position: relative;
-            z-index: 2;
-        }
-
-        .panel-title {
-            font-family: var(--font-display);
-            font-size: 76px;
-            line-height: 0.95;
-            letter-spacing: 1.5px;
-            margin-bottom: 24px;
-            color: var(--text-primary);
-            text-transform: uppercase;
-        }
-
-        .panel-title span {
-            color: var(--accent);
-        }
-
-        .panel-desc {
-            font-size: 16px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 40px;
-            max-width: 440px;
-        }
-
-        .panel-features {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
-
-        .panel-feature {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            color: var(--text-secondary);
-            font-size: 15px;
-            font-weight: 400;
-            transition: color 0.2s ease, transform 0.2s ease;
-        }
-
-        .panel-feature:hover {
-            color: var(--text-primary);
-            transform: translateX(4px);
-        }
-
-        .panel-feature .dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--accent), 0 0 4px var(--accent);
-            flex-shrink: 0;
-            animation: dotGlow 3s infinite ease-in-out;
-        }
-
-        @keyframes dotGlow {
-            0%, 100% {
-                transform: scale(1);
-                opacity: 0.9;
-                box-shadow: 0 0 10px var(--accent);
-            }
-            50% {
-                transform: scale(1.25);
-                opacity: 1;
-                box-shadow: 0 0 16px var(--accent-hover), 0 0 6px var(--accent);
-            }
-        }
-
-        .panel-footer {
-            font-size: 13px;
-            color: var(--text-secondary);
-            opacity: 0.7;
-            position: relative;
-            z-index: 2;
-        }
-
-        /* Split Layout - Right Panel */
-        .right-panel {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 48px 32px;
-            background: var(--bg-dark);
-            min-height: 100vh;
-            overflow-y: auto;
-            transition: background 0.3s ease;
-        }
-
-        /* Form Card Entrance Animation */
-        @keyframes slideUpFade {
-            0% {
-                opacity: 0;
-                transform: translateY(28px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .form-box {
-            width: 100%;
-            max-width: 420px;
-            animation: slideUpFade 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .form-header {
-            margin-bottom: 28px;
-        }
-
-        .form-header h2 {
-            font-size: 30px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-        }
-
-        .form-header p {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .form-header p a {
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s ease;
-        }
-
-        .form-header p a:hover {
-            color: var(--accent-hover);
-            text-decoration: underline;
-        }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            letter-spacing: 0.2px;
-        }
-
-        .input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-            width: 100%;
-        }
-
-        .input-wrapper input {
-            width: 100%;
-            padding: 13px 16px;
-            background: var(--surface-dark);
-            border: 1px solid var(--border-dark);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: var(--font-body);
-            font-size: 14px;
-            line-height: 1.4;
-            transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .input-wrapper.has-toggle input {
-            padding-right: 46px;
-        }
-
-        .input-wrapper input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .input-wrapper input::placeholder {
-            color: var(--text-secondary);
-            opacity: 0.65;
-        }
-
-        /* Password Toggle Button */
-        .password-toggle-btn {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
-        }
-
-        .password-toggle-btn:hover {
-            color: var(--text-primary);
-            background: var(--surface-hover);
-        }
-
-        .password-toggle-btn:active {
-            transform: translateY(-50%) scale(0.92);
-        }
-
-        .password-toggle-btn:focus-visible {
-            outline: 2px solid var(--accent);
-        }
-
-        .password-toggle-btn svg {
-            display: block;
-            pointer-events: none;
-        }
-
-        /* Password Strength Meter */
-        .strength-meter-wrap {
-            margin-top: 10px;
-            margin-bottom: 12px;
-        }
-
-        .strength-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            margin-bottom: 6px;
-        }
-
-        .strength-title {
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .strength-label {
-            font-weight: 600;
-            font-family: var(--font-mono);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: color 0.3s ease;
-        }
-
-        .strength-track {
-            width: 100%;
-            height: 6px;
-            background: var(--surface-hover);
-            border: 1px solid var(--border-dark);
-            border-radius: 999px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .strength-bar {
-            height: 100%;
-            width: 0%;
-            border-radius: 999px;
-            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        /* Password Requirements Checklist */
-        .pw-requirements {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-            padding: 12px 14px;
-            background: var(--surface-dark);
-            border: 1px solid var(--border-dark);
-            border-radius: 8px;
-            margin-top: 10px;
-            transition: border-color 0.2s ease;
-        }
-
-        .req-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            transition: color 0.2s ease;
-        }
-
-        .req-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            font-size: 10px;
-            font-weight: 700;
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-secondary);
-            flex-shrink: 0;
-            transition: all 0.25s ease;
-        }
-
-        [data-theme="light"] .req-icon, [data-theme="arctic"] .req-icon, [data-theme="dawn"] .req-icon {
-            background: rgba(0, 0, 0, 0.08);
-        }
-
-        .req-item.met {
-            color: var(--success-text);
-        }
-
-        .req-item.met .req-icon {
-            background: var(--success-bg);
-            color: var(--success-text);
-            box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
-        }
-
-        .req-item.unmet {
-            color: var(--text-secondary);
-        }
-
-        .req-item.unmet .req-icon {
-            background: var(--error-bg);
-            color: var(--error-text);
-        }
-
-        /* Confirm Password Real-time Indicator */
-        .confirm-feedback {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            font-weight: 500;
-            margin-top: 8px;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: all 0.25s ease;
-        }
-
-        .confirm-feedback.match {
-            background: var(--success-bg);
-            color: var(--success-text);
-            border: 1px solid rgba(74, 222, 128, 0.25);
-        }
-
-        .confirm-feedback.mismatch {
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid rgba(255, 82, 82, 0.25);
-        }
-
-        .confirm-icon {
-            font-weight: 700;
-            font-size: 12px;
-        }
-
-        /* Submit Button */
-        .submit-btn {
-            width: 100%;
-            padding: 13px 20px;
-            background: var(--text-primary);
-            color: var(--bg-dark);
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: var(--font-body);
-            cursor: pointer;
-            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, background 0.2s ease;
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            transform: translateY(-2px) scale(1.01);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-            opacity: 0.96;
-        }
-
-        .submit-btn:active:not(:disabled) {
-            transform: translateY(0) scale(0.99);
-        }
-
-        .submit-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn-arrow {
-            font-size: 15px;
-            transition: transform 0.2s ease;
-        }
-
-        .submit-btn:hover:not(:disabled) .btn-arrow {
-            transform: translateX(3px);
-        }
-
-        /* Divider & Secondary Link */
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin: 24px 0;
-            color: var(--text-secondary);
-            font-size: 12px;
-        }
-
-        .divider::before, .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border-dark);
-        }
-
-        .secondary-link {
-            display: block;
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 14px;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .secondary-link span {
-            color: var(--accent);
-            font-weight: 600;
-            transition: color 0.2s ease;
-        }
-
-        .secondary-link:hover span {
-            color: var(--accent-hover);
-            text-decoration: underline;
-        }
-
-        /* Alert Box */
-        .alert {
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            margin-bottom: 20px;
-            display: none;
-            line-height: 1.5;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .alert.error {
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid rgba(229, 57, 53, 0.25);
-        }
-
-        .alert.success {
-            background: var(--success-bg);
-            color: var(--success-text);
-            border: 1px solid rgba(34, 197, 94, 0.25);
-        }
-
-        /* Theme Float Button */
-        .theme-float {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            background: var(--surface-dark);
-            border: 1px solid var(--border-dark);
-            color: var(--text-primary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-            z-index: 999;
-            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .theme-float:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(229, 57, 53, 0.18);
-        }
-
-        /* Modal specific (preserved for complete design consistency across auth) */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(6px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .modal-overlay.show { display: flex; }
-
-        .modal-box {
-            background: var(--surface-dark);
-            border: 1px solid var(--border-dark);
-            border-radius: 12px;
-            padding: 32px;
-            width: 100%;
-            max-width: 400px;
-            position: relative;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        .modal-close:hover { background: var(--border-dark); color: var(--text-primary); }
-
-        .modal-step { display: none; }
-        .modal-step.active { display: block; }
-        .modal-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
-        .modal-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5; }
-
-        .otp-inputs { display: flex; gap: 8px; justify-content: center; margin: 24px 0; }
-        .otp-inputs input {
-            width: 48px;
-            height: 56px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: 600;
-            font-family: var(--font-mono);
-            background: var(--bg-dark);
-            border: 1px solid var(--border-dark);
-            border-radius: 8px;
-            color: var(--text-primary);
-            transition: all 0.2s;
-        }
-        .otp-inputs input:focus { border-color: var(--accent); outline: none; }
-        .resend-row { text-align: center; font-size: 13px; color: var(--text-secondary); }
-        .resend-row span { color: var(--accent); cursor: pointer; }
-        .step-back { background: none; border: none; color: var(--text-secondary); font-size: 13px; cursor: pointer; margin-bottom: 16px; padding: 0; }
-        .step-back:hover { color: var(--text-primary); }
-        .success-icon { text-align: center; font-size: 48px; margin-bottom: 16px; }
-
-        /* Responsive Breakpoints */
-        @media (max-width: 1024px) {
-            .left-panel {
-                padding: 48px;
-            }
-            .panel-title {
-                font-size: 60px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .left-panel {
-                display: none;
-            }
-            .right-panel {
-                padding: 36px 20px;
-                min-height: 100vh;
-            }
-            .form-box {
-                max-width: 100%;
-            }
-        }
-
-        @media (max-width: 420px) {
-            .right-panel {
-                padding: 24px 16px;
-            }
-            .form-header h2 {
-                font-size: 26px;
-            }
-            .pw-requirements {
-                padding: 10px 12px;
-                gap: 6px;
-            }
-            .req-item {
-                font-size: 11.5px;
-            }
-            .theme-float {
-                bottom: 16px;
-                right: 16px;
-                width: 40px;
-                height: 40px;
-            }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/base.css"/>
+    <link rel="stylesheet" href="/static/auth.css"/>
 </head>
 <body>
 
-<!-- Left Brand Panel (Split Layout) -->
-<div class="left-panel">
-    <div class="panel-logo">DSA<span>Book</span></div>
-    <div class="panel-hero">
-        <h2 class="panel-title">Start<br/><span>Learning</span><br/>Today</h2>
-        <p class="panel-desc">Create your free account and get instant AI-powered answers from your DSA textbooks.</p>
-        <div class="panel-features">
-            <div class="panel-feature">
-                <div class="dot"></div>
-                <span>6+ DSA textbooks indexed</span>
-            </div>
-            <div class="panel-feature">
-                <div class="dot"></div>
-                <span>Personal chat history saved</span>
-            </div>
-            <div class="panel-feature">
-                <div class="dot"></div>
-                <span>Welcome email sent on signup</span>
-            </div>
-            <div class="panel-feature">
-                <div class="dot"></div>
-                <span>Powered by Groq — lightning fast</span>
-            </div>
-            <div class="panel-feature">
-                <div class="dot"></div>
-                <span>100% free for students</span>
-            </div>
-        </div>
-    </div>
-    <div class="panel-footer">
-        <span>DSA Assistant • Fast, private, verified AI explanations</span>
-    </div>
-</div>
-
-<!-- Right Form Panel -->
-<div class="right-panel">
-    <div class="form-box">
-        <div class="form-header">
-            <h2>Create Account</h2>
-            <p>Already have an account? <a href="/login">Sign in here</a></p>
-        </div>
-
-        <div class="alert" id="alertBox"></div>
-
-        <div class="form-group">
-            <label for="username">Username</label>
-            <div class="input-wrapper">
-                <input type="text" id="username" placeholder="e.g. amrit_coder" autocomplete="username" spellcheck="false"/>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="email">Email Address</label>
-            <div class="input-wrapper">
-                <input type="email" id="email" placeholder="you@example.com" autocomplete="email"/>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="password">Password</label>
-            <div class="input-wrapper has-toggle">
-                <input type="password" id="password" placeholder="Create a strong password" autocomplete="new-password" oninput="handlePasswordChange()"/>
-                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('password', this)" aria-label="Show password" tabindex="-1">
-                    <svg class="eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
+<div class="auth">
+    <main class="auth-main">
+        <div class="auth-top">
+            <a href="/" class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5.5" r="2.2"/><circle cx="6.5" cy="18" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/><path d="M11 7.6 7.5 15.9M13 7.6l3.5 8.3"/></svg>
+                </span>
+                DSA Assistant
+            </a>
+            <div class="theme-picker" data-theme-picker>
+                <button class="icon-btn" data-theme-trigger aria-label="Change theme" title="Change theme">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16c3.1 0 5.6-2.5 5.6-5.6C21.9 6.1 17.4 2 12 2z"/></svg>
                 </button>
             </div>
+        </div>
 
-            <!-- Password Strength Meter -->
-            <div class="strength-meter-wrap" id="strengthMeterWrap">
-                <div class="strength-meta">
-                    <span class="strength-title">Password Strength</span>
-                    <span class="strength-label" id="strengthLabel" style="color: var(--text-secondary);">Empty</span>
-                </div>
-                <div class="strength-track">
-                    <div class="strength-bar" id="strengthBar"></div>
-                </div>
-            </div>
+        <div class="auth-form-wrap">
+            <form class="auth-form" id="signupForm" novalidate>
+                <h1>Create your account</h1>
+                <p class="auth-sub">Free for students. Start asking questions in under a minute.</p>
 
-            <!-- Requirements Checklist with live ✓/✕ indicators -->
-            <div class="pw-requirements" id="pwRequirements">
-                <div class="req-item" id="reqLength">
-                    <span class="req-icon">✕</span>
-                    <span class="req-text">Minimum 8 characters</span>
+                <div class="alert" id="alertBox" role="alert"></div>
+
+                <div class="field">
+                    <label class="label" for="username">Username</label>
+                    <input class="input" type="text" id="username" placeholder="e.g. ada_lovelace" autocomplete="username" spellcheck="false" required/>
                 </div>
-                <div class="req-item" id="reqUpper">
-                    <span class="req-icon">✕</span>
-                    <span class="req-text">At least one uppercase letter (A-Z)</span>
+
+                <div class="field">
+                    <label class="label" for="email">Email</label>
+                    <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required/>
                 </div>
-                <div class="req-item" id="reqLower">
-                    <span class="req-icon">✕</span>
-                    <span class="req-text">At least one lowercase letter (a-z)</span>
+
+                <div class="field">
+                    <label class="label" for="password">Password</label>
+                    <div class="input-wrap">
+                        <input class="input has-toggle" type="password" id="password" placeholder="Create a password" autocomplete="new-password" oninput="handlePasswordChange()" required/>
+                        <button type="button" class="input-toggle" onclick="togglePasswordVisibility('password', this)" aria-label="Show password"></button>
+                    </div>
+                    <div class="strength" id="strengthMeter" data-level="0">
+                        <div class="strength-track"><span></span><span></span><span></span><span></span></div>
+                        <div class="strength-meta"><span>Password strength</span><span class="strength-label" id="strengthLabel"></span></div>
+                    </div>
+                    <ul class="checklist" id="pwRequirements">
+                        <li id="reqLength">8+ characters</li>
+                        <li id="reqUpper">Uppercase letter</li>
+                        <li id="reqLower">Lowercase letter</li>
+                        <li id="reqNum">Number</li>
+                        <li id="reqSpecial">Symbol</li>
+                    </ul>
                 </div>
-                <div class="req-item" id="reqNum">
-                    <span class="req-icon">✕</span>
-                    <span class="req-text">At least one number (0-9)</span>
+
+                <div class="field">
+                    <label class="label" for="confirmPassword">Confirm password</label>
+                    <div class="input-wrap">
+                        <input class="input has-toggle" type="password" id="confirmPassword" placeholder="Repeat your password" autocomplete="new-password" oninput="handleConfirmPasswordChange()" required/>
+                        <button type="button" class="input-toggle" onclick="togglePasswordVisibility('confirmPassword', this)" aria-label="Show password"></button>
+                    </div>
+                    <p class="field-hint" id="confirmFeedback" aria-live="polite"></p>
                 </div>
-                <div class="req-item" id="reqSpecial">
-                    <span class="req-icon">✕</span>
-                    <span class="req-text">At least one special character (!@#$%^&*)</span>
+
+                <button type="submit" class="btn btn-primary btn-block" id="signupBtn">Create account</button>
+
+                <p class="auth-switch">Already have an account? <a href="/login" class="link">Sign in</a></p>
+            </form>
+        </div>
+
+        <p class="auth-foot">Answers are generated from indexed textbooks and may contain mistakes.</p>
+    </main>
+
+    <aside class="auth-aside" aria-hidden="true">
+        <div>
+            <h2 class="aside-title">Your study partner for data structures and algorithms.</h2>
+            <p class="aside-text">Ask in plain language and get clear, structured explanations drawn from trusted textbooks.</p>
+        </div>
+
+        <div class="preview-card">
+            <div class="preview-q">When should I use a heap instead of a sorted array?</div>
+            <div class="preview-dots"><i></i><i></i><i></i></div>
+            <div class="preview-a">
+                <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5.5" r="2.2"/><circle cx="6.5" cy="18" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/><path d="M11 7.6 7.5 15.9M13 7.6l3.5 8.3"/></svg></span>
+                <div>
+                    <p>Use a heap when you repeatedly insert items and remove the minimum or maximum: both take <strong>O(log n)</strong>, while keeping an array sorted costs O(n) per insert.</p>
+                    <span class="preview-source"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Algorithms, Sedgewick &amp; Wayne</span>
                 </div>
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="confirmPassword">Confirm Password</label>
-            <div class="input-wrapper has-toggle">
-                <input type="password" id="confirmPassword" placeholder="Repeat your password" autocomplete="new-password" oninput="handleConfirmPasswordChange()"/>
-                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('confirmPassword', this)" aria-label="Show password" tabindex="-1">
-                    <svg class="eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                </button>
-            </div>
-            <!-- Real-time Confirm Password Indicator -->
-            <div class="confirm-feedback" id="confirmFeedback" style="display: none;">
-                <span class="confirm-icon" id="confirmIcon">✓</span>
-                <span class="confirm-text" id="confirmText">Passwords match</span>
-            </div>
-        </div>
-
-        <button class="submit-btn" id="signupBtn" onclick="handleSignup()">
-            <span>Create Account</span>
-            <span class="btn-arrow">→</span>
-        </button>
-
-        <div class="divider">or</div>
-
-        <a href="/login" class="secondary-link">
-            Already have an account? <span>Login</span>
-        </a>
-    </div>
+        <ul class="aside-points">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Grounded in classic texts like CLRS and Open Data Structures</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Chat history that follows you across sessions</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Light and dark mode for late-night study</li>
+        </ul>
+    </aside>
 </div>
 
+<script src="/static/bg.js"></script>
 <script>
-    // Strong password validation rules
+    const EYE     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>';
+    document.querySelectorAll('.input-toggle').forEach(b => b.innerHTML = EYE);
+
+    function togglePasswordVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const show  = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.innerHTML = show ? EYE_OFF : EYE;
+        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    }
+
     function validatePassword(val) {
         const checks = {
             length:  val.length >= 8,
             upper:   /[A-Z]/.test(val),
             lower:   /[a-z]/.test(val),
             num:     /[0-9]/.test(val),
-            special: /[!@#$%^&*()_+\-=\[\]{}|;':",.<>?\/\\~`]/.test(val)
+            special: /[^A-Za-z0-9]/.test(val)
         };
-
-        let count = 0;
-        if (checks.length) count++;
-        if (checks.upper) count++;
-        if (checks.lower) count++;
-        if (checks.num) count++;
-        if (checks.special) count++;
-
-        return {
-            checks,
-            count,
-            isValid: count === 5
-        };
+        const count = Object.values(checks).filter(Boolean).length;
+        return { checks, count, isValid: count === 5 };
     }
 
-    // Live password input handler
     function handlePasswordChange() {
         const password = document.getElementById('password').value;
         const { checks, count } = validatePassword(password);
-        const hasInput = password.length > 0;
 
-        // Update checklist
-        updateChecklistRow('reqLength', checks.length, hasInput);
-        updateChecklistRow('reqUpper', checks.upper, hasInput);
-        updateChecklistRow('reqLower', checks.lower, hasInput);
-        updateChecklistRow('reqNum', checks.num, hasInput);
-        updateChecklistRow('reqSpecial', checks.special, hasInput);
+        const rows = { reqLength: checks.length, reqUpper: checks.upper, reqLower: checks.lower, reqNum: checks.num, reqSpecial: checks.special };
+        for (const [id, ok] of Object.entries(rows)) document.getElementById(id).classList.toggle('met', ok);
 
-        // Update strength meter bar & label
-        const bar   = document.getElementById('strengthBar');
-        const label = document.getElementById('strengthLabel');
+        const level = !password ? 0 : count <= 2 ? 1 : count === 3 ? 2 : count === 4 ? 3 : 4;
+        document.getElementById('strengthMeter').dataset.level = level;
+        document.getElementById('strengthLabel').textContent = ['', 'Weak', 'Fair', 'Good', 'Strong'][level];
 
-        if (!hasInput) {
-            bar.style.width = '0%';
-            bar.style.backgroundColor = 'transparent';
-            bar.style.boxShadow = 'none';
-            label.textContent = 'Empty';
-            label.style.color = 'var(--text-secondary)';
-        } else if (count <= 1) {
-            bar.style.width = '20%';
-            bar.style.backgroundColor = 'var(--error-text)';
-            bar.style.boxShadow = '0 0 10px rgba(255, 82, 82, 0.45)';
-            label.textContent = 'Weak';
-            label.style.color = 'var(--error-text)';
-        } else if (count <= 3) {
-            bar.style.width = count === 2 ? '40%' : '60%';
-            bar.style.backgroundColor = '#fb923c';
-            bar.style.boxShadow = '0 0 10px rgba(251, 146, 60, 0.45)';
-            label.textContent = 'Fair';
-            label.style.color = '#fb923c';
-        } else if (count === 4) {
-            bar.style.width = '80%';
-            bar.style.backgroundColor = '#facc15';
-            bar.style.boxShadow = '0 0 10px rgba(250, 204, 21, 0.45)';
-            label.textContent = 'Good';
-            label.style.color = '#facc15';
-        } else {
-            // All 5 requirements met
-            bar.style.width = '100%';
-            bar.style.backgroundColor = 'var(--success-text)';
-            bar.style.boxShadow = '0 0 10px rgba(74, 222, 128, 0.45)';
-            label.textContent = 'Strong';
-            label.style.color = 'var(--success-text)';
-        }
-
-        // Live check confirm password match if already entered
-        const confirmVal = document.getElementById('confirmPassword').value;
-        if (confirmVal.length > 0) {
-            handleConfirmPasswordChange();
-        }
+        if (document.getElementById('confirmPassword').value) handleConfirmPasswordChange();
     }
 
-    function updateChecklistRow(elementId, isMet, hasInput) {
-        const el = document.getElementById(elementId);
-        if (!el) return;
-        const icon = el.querySelector('.req-icon');
-
-        if (isMet) {
-            el.className = 'req-item met';
-            if (icon) icon.textContent = '✓';
-        } else {
-            el.className = hasInput ? 'req-item unmet' : 'req-item';
-            if (icon) icon.textContent = '✕';
-        }
-    }
-
-    // Live confirm password handler
     function handleConfirmPasswordChange() {
         const password = document.getElementById('password').value;
         const confirm  = document.getElementById('confirmPassword').value;
-        const feedback = document.getElementById('confirmFeedback');
-        const icon     = document.getElementById('confirmIcon');
-        const text     = document.getElementById('confirmText');
+        const hint     = document.getElementById('confirmFeedback');
 
-        if (!confirm) {
-            feedback.style.display = 'none';
-            return;
-        }
-
-        feedback.style.display = 'flex';
-        if (confirm === password && password.length > 0) {
-            feedback.className = 'confirm-feedback match';
-            icon.textContent = '✓';
-            text.textContent = 'Passwords match';
-        } else {
-            feedback.className = 'confirm-feedback mismatch';
-            icon.textContent = '✕';
-            text.textContent = 'Passwords do not match';
-        }
+        if (!confirm) { hint.className = 'field-hint'; hint.textContent = ''; return; }
+        const match = confirm === password;
+        hint.className   = 'field-hint ' + (match ? 'match' : 'mismatch');
+        hint.textContent = match ? 'Passwords match' : 'Passwords do not match';
     }
 
-    // Toggle password visibility
-    function togglePasswordVisibility(inputId, btn) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
-        const isPassword = input.type === 'password';
-        input.type = isPassword ? 'text' : 'password';
-
-        if (isPassword) {
-            // Switch to hide icon (eye-off)
-            btn.innerHTML = `
-                <svg class="eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-            `;
-            btn.setAttribute('aria-label', 'Hide password');
-        } else {
-            // Switch to show icon (eye)
-            btn.innerHTML = `
-                <svg class="eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-            `;
-            btn.setAttribute('aria-label', 'Show password');
-        }
+    function showAlert(message, type) {
+        const box = document.getElementById('alertBox');
+        box.textContent = message;
+        box.className   = `alert ${type}`;
     }
 
-    // Signup form submission
+    document.getElementById('signupForm').addEventListener('submit', e => { e.preventDefault(); handleSignup(); });
+
     async function handleSignup() {
-        const username  = document.getElementById('username').value.trim();
-        const email     = document.getElementById('email').value.trim();
-        const password  = document.getElementById('password').value.trim();
-        const confirm   = document.getElementById('confirmPassword').value.trim();
-        const btn       = document.getElementById('signupBtn');
-        const alertBox  = document.getElementById('alertBox');
+        const username = document.getElementById('username').value.trim();
+        const email    = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const confirm  = document.getElementById('confirmPassword').value.trim();
+        const btn      = document.getElementById('signupBtn');
 
-        alertBox.style.display = 'none';
-        alertBox.className = 'alert';
-
-        // Validation checks
-        if (!username || !email || !password || !confirm) {
-            return showAlert('All fields are required.', 'error');
-        }
-        if (username.length < 3) {
-            return showAlert('Username must be at least 3 characters.', 'error');
-        }
-        if (!email.includes('@')) {
-            return showAlert('Please enter a valid email address.', 'error');
-        }
-
-        // Strong password check: must meet ALL 5 requirements
-        const validation = validatePassword(password);
-        if (!validation.isValid) {
-            return showAlert('Password must meet all 5 security requirements.', 'error');
-        }
-
-        if (password !== confirm) {
-            return showAlert('Passwords do not match.', 'error');
-        }
+        if (!username || !email || !password || !confirm) return showAlert('Please fill in all fields.', 'error');
+        if (username.length < 3)          return showAlert('Username must be at least 3 characters.', 'error');
+        if (!email.includes('@'))         return showAlert('Enter a valid email address.', 'error');
+        if (!validatePassword(password).isValid) return showAlert('Your password must meet all of the requirements.', 'error');
+        if (password !== confirm)         return showAlert('Passwords do not match.', 'error');
 
         btn.disabled = true;
-        btn.innerHTML = '<span>Creating account...</span>';
+        btn.innerHTML = '<span class="spinner"></span>Creating account…';
 
         try {
             const res = await fetch('/api/signup', {
@@ -1083,51 +195,18 @@
             const data = await res.json();
 
             if (!res.ok) {
-                showAlert(data.error || 'Signup failed.', 'error');
+                showAlert(data.error || 'Could not create your account.', 'error');
                 btn.disabled = false;
-                btn.innerHTML = '<span>Create Account</span> <span class="btn-arrow">→</span>';
+                btn.textContent = 'Create account';
                 return;
             }
-
-            showAlert(`✅ Welcome, ${data.username}! Check your email. Redirecting...`, 'success');
-
-            setTimeout(() => {
-                window.location.href = data.redirect || '/chat';
-            }, 2000);
-
+            window.location.href = data.redirect || '/chat';
         } catch (e) {
-            showAlert('Server error. Please try again.', 'error');
+            showAlert('Could not reach the server. Please try again.', 'error');
             btn.disabled = false;
-            btn.innerHTML = '<span>Create Account</span> <span class="btn-arrow">→</span>';
+            btn.textContent = 'Create account';
         }
     }
-
-    function showAlert(message, type) {
-        const box = document.getElementById('alertBox');
-        box.textContent = message;
-        box.className   = `alert ${type}`;
-        box.style.display = 'block';
-    }
-
-    // Enter key listener
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') handleSignup();
-    });
-
-    // Run live checks once DOM is loaded in case of pre-filled inputs
-    document.addEventListener('DOMContentLoaded', () => {
-        if (document.getElementById('password').value) {
-            handlePasswordChange();
-        }
-        if (document.getElementById('confirmPassword').value) {
-            handleConfirmPasswordChange();
-        }
-    });
 </script>
-
-<button class="theme-float" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle color theme">
-    <span data-theme-icon></span>
-</button>
-
 </body>
 </html>

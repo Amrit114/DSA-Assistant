@@ -33,7 +33,11 @@ def similarity_search(query: str, top_k: int = 7) -> str:
     conn.close()
 
     
-    THRESHOLD = 0.88
+    # L2 distance between normalised embeddings (0 = identical, ~1.41 = unrelated).
+    # Measured on this index: best match for DSA questions 0.60–0.88 (long multi-part
+    # questions sit at the top of that range); general off-topic questions 0.98+.
+    # Technical off-topic questions that do match (e.g. OS paging) are refused by the prompt.
+    THRESHOLD = 0.95
 
     context_parts = []
     for row in results:

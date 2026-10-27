@@ -1,18 +1,23 @@
 // =====================================================
 //  DSA ASSISTANT — script.js
-//  Dark Red Theme · SQLite backend · Claude-style history
+//  Chat UI · session history · answer rendering · PDF upload
 // =====================================================
 
-const API_KEY = 'my-secret-key';
+// Auth is the Flask session cookie, sent automatically with same-origin fetches.
 const HEADERS = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': API_KEY
+    'Content-Type': 'application/json'
 };
 
 // ── State ──────────────────────────────────────────
 let currentSessionId = null;
 let allSessions = [];
-let isLoading = false;
+// A question keeps running when the user switches chats. Each open question is a "job"
+// keyed by its chat: the session id, or a draft key for a brand-new chat with no id yet.
+let draftSeq = 1;
+let draftKey = 'draft-1';
+let viewToken = 0;                 // bumps on every chat switch so late fetches can tell
+const jobs = new Map();            // viewKey -> { question, sessionId, title, loadingId }
+const viewKey = () => currentSessionId || draftKey;
 
 // ── DOM refs ───────────────────────────────────────
 const chatContainer = document.getElementById('chatContainer');
@@ -23,19 +28,24 @@ const sessionsList  = document.getElementById('sessionsList');
 const toastEl       = document.getElementById('toast');
 const chatArea      = document.getElementById('chatArea');
 const scrollBtn     = document.getElementById('scrollBottomBtn');
+const composer      = document.getElementById('inputShell');
+const topbarTitle   = document.getElementById('topbarTitle');
+
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const LOGO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5.5" r="2.2"/><circle cx="6.5" cy="18" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/><path d="M11 7.6 7.5 15.9M13 7.6l3.5 8.3"/></svg>';
+const COPY_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
+const BOOK_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>';
 
 // =====================================================
-//  THEME
-// =====================================================
-//  THEME — handled by /static/theme.js (loaded in index.html)
-//  toggleTheme() and applyTheme() come from theme.js
+//  THEME — handled by /static/theme.js
 // =====================================================
 function loadTheme() {
-    applyTheme(getTheme()); // getTheme() from theme.js
+    applyTheme(getTheme(), false);
 }
 
 // =====================================================
-//  SIDEBAR MOBILE
+//  SIDEBAR
 // =====================================================
 function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
@@ -43,18 +53,15 @@ function toggleSidebar() {
 }
 
 function toggleSidebarCollapse() {
-    const sidebar = document.getElementById('sidebar');
-    const wrapper = document.getElementById('mainWrapper');
-    const collapsed = sidebar.classList.toggle('collapsed');
-    localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+    const collapsed = document.getElementById('sidebar').classList.toggle('collapsed');
+    try { localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0'); } catch (e) { /* storage blocked */ }
 }
 
 // Restore sidebar collapse state on load
-(function() {
-    if (localStorage.getItem('sidebarCollapsed') === '1') {
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar) sidebar.classList.add('collapsed');
-    }
+(function () {
+    try {
+        if (localStorage.getItem('sidebarCollapsed') === '1') document.getElementById('sidebar').classList.add('collapsed');
+    } catch (e) { /* storage blocked */ }
 })();
 
 function closeSidebarMobile() {
@@ -66,27 +73,24 @@ function closeSidebarMobile() {
     }
 }
 
+// Expands the rail (if collapsed) and focuses chat search.
+function openSearch() {
+    const sidebar = document.getElementById('sidebar');
+    const wasCollapsed = sidebar.classList.contains('collapsed');
+    if (wasCollapsed) toggleSidebarCollapse();
+    const input = document.getElementById('searchInput');
+    setTimeout(() => { input.focus(); input.select(); }, wasCollapsed ? 250 : 0);
+}
+
 // ── Global Keyboard Shortcuts ──────────────────────
-document.addEventListener('keydown', function(e) {
-    // Ctrl+K or Cmd+K to focus search input
+document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        const sidebar = document.getElementById('sidebar');
-        const searchInput = document.getElementById('searchInput');
-        if (sidebar && sidebar.classList.contains('collapsed')) {
-            toggleSidebarCollapse();
-        }
-        if (searchInput) {
-            searchInput.focus();
-            searchInput.select();
-        }
+        openSearch();
     }
-    // Escape key to close modal
     if (e.key === 'Escape') {
         const modal = document.getElementById('pdfModalOverlay');
-        if (modal && modal.classList.contains('open')) {
-            closeUploadModal();
-        }
+        if (modal && modal.classList.contains('open')) closeUploadModal();
     }
 });
 
@@ -105,37 +109,54 @@ async function fetchSessions() {
 }
 
 function renderSessions(sessions) {
+    const active = allSessions.find(s => s.id === currentSessionId);
+    const draftJob = !currentSessionId && jobs.get(draftKey);
+    setTopbarTitle(active ? active.title : draftJob ? draftJob.title : 'New chat');
+
+    // New chats still waiting for their first answer have no session yet; list them on top.
+    const drafts = [...jobs.entries()].filter(([, job]) => !job.sessionId);
+    const draftHtml = drafts.length ? '<div class="session-group-label">In progress</div>' + drafts.map(([key, job]) => `
+        <div class="session-item pending ${key === viewKey() ? 'active' : ''}" onclick="openDraft('${key}')" tabindex="0" role="button" onkeydown="if(event.key==='Enter')openDraft('${key}')">
+            <div class="session-item-body">
+                <div class="session-title">${escapeHtml(job.title)}</div>
+                <div class="session-time">Thinking…</div>
+            </div>
+        </div>`).join('') : '';
+
     if (!sessions || sessions.length === 0) {
+        if (draftHtml) { sessionsList.innerHTML = draftHtml; return; }
+        const searching = document.getElementById('searchInput').value.trim();
         sessionsList.innerHTML = `
             <div class="sessions-empty">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <p>No conversations yet</p>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <p>${searching ? 'No matching chats' : 'No conversations yet'}</p>
+                <span>${searching ? 'Try a different search' : 'Your chats will appear here'}</span>
             </div>`;
         return;
     }
 
     const groups = groupByDate(sessions);
-    let html = '';
+    let html = draftHtml;
+    let i = 0;
 
     for (const [label, items] of Object.entries(groups)) {
         html += `<div class="session-group-label">${label}</div>`;
         for (const s of items) {
             const isActive = s.id === currentSessionId;
+            const pending = jobs.has(s.id);
             const title = escapeHtml(s.title);
             html += `
-                <div class="session-item ${isActive ? 'active' : ''}" id="session-${s.id}" onclick="loadSession('${s.id}')">
+                <div class="session-item ${isActive ? 'active' : ''} ${pending ? 'pending' : ''}" id="session-${s.id}" style="--i:${i++}" onclick="loadSession('${s.id}')" tabindex="0" role="button" onkeydown="if(event.key==='Enter')loadSession('${s.id}')">
                     <div class="session-item-body">
                         <div class="session-title">${title}</div>
-                        <div class="session-time">${formatTimeLabel(s.updated_at)}</div>
+                        <div class="session-time">${pending ? 'Thinking…' : formatTimeLabel(s.updated_at)}</div>
                     </div>
                     <div class="session-actions">
-                        <button class="s-btn" onclick="renameSession(event,'${s.id}')" title="Rename">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <button class="s-btn" onclick="renameSession(event,'${s.id}')" title="Rename" aria-label="Rename chat">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="s-btn del" onclick="deleteSession(event,'${s.id}')" title="Delete">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6m4-6v6"/></svg>
+                        <button class="s-btn del" onclick="deleteSession(event,'${s.id}')" title="Delete" aria-label="Delete chat">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6m4-6v6"/></svg>
                         </button>
                     </div>
                 </div>`;
@@ -143,6 +164,14 @@ function renderSessions(sessions) {
     }
 
     sessionsList.innerHTML = html;
+}
+
+function setTopbarTitle(title) {
+    if (!topbarTitle || topbarTitle.textContent === title) return;
+    topbarTitle.textContent = title;
+    topbarTitle.style.animation = 'none';
+    void topbarTitle.offsetWidth;          // restart the fade-in
+    topbarTitle.style.animation = '';
 }
 
 function groupByDate(sessions) {
@@ -180,38 +209,86 @@ function filterSessions(query) {
 // =====================================================
 async function loadSession(sessionId) {
     if (sessionId === currentSessionId) { closeSidebarMobile(); return; }
+    const token = ++viewToken;
 
     try {
         const res = await fetch(`/api/sessions/${sessionId}`, { headers: HEADERS });
-        if (!res.ok) { showToast('❌ Could not load session.', 'error'); return; }
+        if (token !== viewToken) return;             // user moved on while this loaded
+        if (!res.ok) { showToast('Could not load this chat.', 'error'); return; }
         const data = await res.json();
+        if (token !== viewToken) return;
 
         currentSessionId = sessionId;
-        chatContainer.innerHTML = '';
+        clearView();
         emptyState.style.display = 'none';
 
         for (const msg of data.messages) {
             renderMessage(msg.content, msg.role, false);
         }
+        resumeJob(sessionId);
+        syncBusyState();
 
-        await fetchSessions();
-        scrollBottom();
+        renderSessions(allSessions);
+        chatArea.scrollTo({ top: chatArea.scrollHeight });
         closeSidebarMobile();
     } catch (e) {
-        showToast('❌ Failed to load chat.', 'error');
+        showToast('Failed to load chat.', 'error');
     }
+}
+
+// Re-opens a brand-new chat whose first answer is still being generated.
+function openDraft(key) {
+    viewToken++;
+    currentSessionId = null;
+    draftKey = key;
+    clearView();
+    emptyState.style.display = 'none';
+    resumeJob(key);
+    syncBusyState();
+    renderSessions(allSessions);
+    closeSidebarMobile();
+}
+
+// If this chat has a question in flight, show it again with its thinking indicator.
+function resumeJob(key) {
+    const job = jobs.get(key);
+    if (!job) return;
+    renderMessage(job.question, 'user', false);
+    job.loadingId = showLoading();
+}
+
+function clearView() {
+    Object.keys(loadingTimers).forEach(id => { clearInterval(loadingTimers[id]); delete loadingTimers[id]; });
+    chatContainer.innerHTML = '';
+}
+
+// Busy = the chat on screen is waiting for an answer.
+function syncBusyState() {
+    const busy = jobs.has(viewKey());
+    sendButton.disabled = busy;
+    document.body.classList.toggle('ai-busy', busy);
+    if (window.bgFx) window.bgFx.setBusy(busy);
 }
 
 // =====================================================
 //  NEW CHAT
 // =====================================================
 function startNewChat() {
+    viewToken++;
     currentSessionId = null;
-    chatContainer.innerHTML = '';
+    draftKey = 'draft-' + (++draftSeq);
+    clearView();
+    syncBusyState();
+    renderSessions(allSessions);
     emptyState.style.display = 'flex';
+    // replay the welcome entrance
+    emptyState.querySelectorAll('.welcome > *, .suggestion').forEach(el => {
+        el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+    });
     questionInput.value = '';
     questionInput.style.height = 'auto';
     document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
+    setTopbarTitle('New chat');
     closeSidebarMobile();
     questionInput.focus();
 }
@@ -227,7 +304,7 @@ async function deleteSession(event, sessionId) {
         if (currentSessionId === sessionId) startNewChat();
         await fetchSessions();
         showToast('Conversation deleted.', 'info');
-    } catch (e) { showToast('❌ Could not delete.', 'error'); }
+    } catch (e) { showToast('Could not delete.', 'error'); }
 }
 
 async function renameSession(event, sessionId) {
@@ -241,7 +318,7 @@ async function renameSession(event, sessionId) {
             body: JSON.stringify({ title: newTitle.trim() })
         });
         await fetchSessions();
-    } catch (e) { showToast('❌ Could not rename.', 'error'); }
+    } catch (e) { showToast('Could not rename.', 'error'); }
 }
 
 async function clearAllChats() {
@@ -251,7 +328,7 @@ async function clearAllChats() {
         startNewChat();
         await fetchSessions();
         showToast('All conversations cleared.', 'info');
-    } catch (e) { showToast('❌ Could not clear.', 'error'); }
+    } catch (e) { showToast('Could not clear.', 'error'); }
 }
 
 // =====================================================
@@ -259,45 +336,70 @@ async function clearAllChats() {
 // =====================================================
 async function askQuestion() {
     const question = questionInput.value.trim();
-    if (!question || isLoading) return;
+    const key = viewKey();
+    if (!question || jobs.has(key)) return;   // one open question per chat
+
+    const job = {
+        question,
+        sessionId: currentSessionId,
+        title: question.length > 60 ? question.slice(0, 60) + '…' : question,
+    };
+    jobs.set(key, job);
 
     emptyState.style.display = 'none';
     renderMessage(question, 'user');
 
     questionInput.value = '';
     questionInput.style.height = 'auto';
-    isLoading = true;
-    sendButton.disabled = true;
+    composer.classList.add('sending');
+    setTimeout(() => composer.classList.remove('sending'), 900);
+    if (window.bgFx) {
+        const r = composer.getBoundingClientRect();
+        window.bgFx.pulse(r.left + r.width / 2, r.top);
+    }
 
-    const loadingId = showLoading();
+    job.loadingId = showLoading();
+    syncBusyState();
+    renderSessions(allSessions);
 
+    let res = null, data = {};
     try {
         const body = { question };
-        if (currentSessionId) body.session_id = currentSessionId;
-
-        const res = await fetch('/api/ask', {
+        if (job.sessionId) body.session_id = job.sessionId;
+        res = await fetch('/api/ask', {
             method: 'POST', headers: HEADERS,
             body: JSON.stringify(body)
         });
-        const data = await res.json();
-        removeLoading(loadingId);
-
-        if (!res.ok) {
-            renderMessage('❌ ' + (data.error || 'Server error. Please try again.'), 'assistant');
-        } else {
-            if (data.session_id) currentSessionId = data.session_id;
-            renderMessage(data.answer || 'No answer returned.', 'assistant');
-            await fetchSessions();
-        }
+        data = await res.json();
     } catch (e) {
-        removeLoading(loadingId);
-        renderMessage('❌ Could not reach the server. Is Flask running?', 'assistant');
         console.error(e);
     }
 
-    isLoading = false;
-    sendButton.disabled = false;
-    questionInput.focus();
+    jobs.delete(key);
+    const stillHere = viewKey() === key;         // the user may have switched chats meanwhile
+    const ok = res && res.ok;
+    if (ok && data.session_id) job.sessionId = data.session_id;
+
+    if (stillHere) {
+        removeLoading(job.loadingId);
+        if (ok) {
+            if (!currentSessionId) currentSessionId = data.session_id;
+            renderMessage(data.answer || 'No answer returned.', 'assistant', true, true);
+        } else {
+            renderMessage(res ? (data.error || 'Server error. Please try again.')
+                              : 'Could not reach the server. Please check your connection and try again.', 'assistant');
+        }
+        questionInput.focus();
+    } else if (ok) {
+        showToast(`Answer ready: “${job.title}”`, 'success', 7000,
+            { label: 'Open', onClick: () => loadSession(job.sessionId) });
+    } else {
+        showToast(`Couldn't answer “${job.title}”. Please try again.`, 'error', 6000);
+    }
+
+    if (res && res.status === 401) { window.location.href = '/login'; return; }
+    syncBusyState();
+    await fetchSessions();
 }
 
 function askSuggestion(question) {
@@ -307,68 +409,220 @@ function askSuggestion(question) {
 
 // =====================================================
 //  RENDER MESSAGE
+//  animate=true reveals a fresh answer block by block.
 // =====================================================
-function renderMessage(text, role, scroll = true) {
+function renderMessage(text, role, scroll = true, animate = false) {
     const div = document.createElement('div');
     div.className = `message ${role}`;
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    const avatar   = role === 'user' ? 'U' : '⚡';
-    const sender   = role === 'user' ? 'You' : 'DSA Assistant';
-    const now      = new Date();
-    const timeStr  = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    const bodyHtml = role === 'assistant'
-        ? `<div class="msg-sender">${sender}</div><div class="msg-content">${formatMessage(text)}</div><div class="msg-time">${timeStr}</div>`
-        : `<div class="msg-sender">${sender}</div><div class="msg-content">${escapeHtml(text)}</div><div class="msg-time">${timeStr}</div>`;
-
-    div.innerHTML = `
-        <div class="message-inner">
-            <div class="msg-avatar">${avatar}</div>
-            <div class="msg-body">${bodyHtml}</div>
-        </div>`;
+    if (role === 'user') {
+        div.innerHTML = `
+            <div class="message-inner">
+                <div class="msg-body"><div class="msg-content">${escapeHtml(text)}</div></div>
+            </div>`;
+    } else {
+        div.innerHTML = `
+            <div class="message-inner">
+                <div class="ai-avatar">${LOGO_SVG}</div>
+                <div class="msg-body">
+                    <div class="msg-sender">DSA Assistant <span class="msg-time">${timeStr}</span></div>
+                    <div class="msg-content">${formatMessage(text)}</div>
+                    <div class="msg-actions">
+                        <button class="msg-action" data-copy-answer>${COPY_SVG}<span>Copy</span></button>
+                    </div>
+                </div>
+            </div>`;
+        const content = div.querySelector('.msg-content');
+        enhanceAnswer(content);
+        div.querySelector('[data-copy-answer]').addEventListener('click', e => copyText(text, e.currentTarget));
+        if (animate && !REDUCED_MOTION) streamAnswer(div, content);
+    }
 
     chatContainer.appendChild(div);
     if (scroll) scrollBottom();
 }
 
+// Post-render polish: step lists, source chips.
+function enhanceAnswer(content) {
+    content.querySelectorAll(':scope > ol').forEach(ol => {
+        ol.classList.add('steps');
+        if (ol.start > 1) ol.style.counterReset = `step ${ol.start - 1}`;
+    });
+
+    const heading = [...content.querySelectorAll('h1, h2, h3, h4, p > strong:only-child')]
+        .find(h => /^\s*sources?\s*:?\s*$/i.test(h.textContent));
+    if (!heading) return;
+    const block = heading.tagName === 'STRONG' ? heading.parentElement : heading;
+    const list = block.nextElementSibling;
+    if (!list || !/^(UL|OL)$/.test(list.tagName)) return;
+
+    const names = [...new Set([...list.children].map(li => prettySource(li.textContent)).filter(Boolean))];
+    const wrap = document.createElement('div');
+    wrap.className = 'sources';
+    wrap.innerHTML = `<div class="sources-title">${BOOK_SVG}Sources</div><div class="source-chips">` +
+        names.map((n, i) => `<span class="source-chip" title="${escapeHtml(n)}"><b>${i + 1}</b><span>${escapeHtml(n)}</span></span>`).join('') +
+        '</div>';
+    block.replaceWith(wrap);
+    list.remove();
+}
+
+// "Robert_Sedgewick - Algorithms (2011).pdf" → "Robert Sedgewick - Algorithms (2011)"
+function prettySource(name) {
+    return name.replace(/\.pdf\b/gi, '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// Streams a fresh answer in like a live chat: text is typed out block by block,
+// list items / table rows / source chips appear as they are reached, code arrives line by line.
+// Only one text node changes per frame, so it stays smooth on long answers.
+const STREAM_CHARS_PER_MS = 0.45;   // ~450 characters per second
+const CODE_LINE_COST      = 30;     // a code line "costs" as much as 30 characters
+
+function streamAnswer(message, content) {
+    const blocks = [...content.children];
+    if (!blocks.length) return;
+
+    const plan = blocks.map(el => {
+        el.classList.add('seq-hidden');
+        el.querySelectorAll('li, tr, .source-chip').forEach(r => r.classList.add('row-hidden'));
+        const rows = el.classList.contains('code-block') ? [...el.querySelectorAll('.code-row')] : null;
+        if (rows) {
+            rows.forEach(r => r.classList.add('row-hidden'));
+            return { el, rows, size: rows.length * CODE_LINE_COST };
+        }
+        const nodes = [];
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+            const n = walker.currentNode;
+            if (n.data.length) { nodes.push({ n, full: n.data }); n.data = ''; }
+        }
+        return { el, nodes, size: nodes.reduce((s, x) => s + x.full.length, 0) };
+    });
+    const total = plan.reduce((s, p) => s + p.size, 0);
+    // Short answers still take a moment; very long ones are capped so nobody waits too long.
+    const rate = total / Math.min(Math.max(total / STREAM_CHARS_PER_MS, 900), 6500);
+
+    message.classList.add('revealing');
+    const skip = document.createElement('button');
+    skip.className = 'skip-reveal';
+    skip.textContent = 'Show all';
+    message.querySelector('.msg-sender').appendChild(skip);
+
+    let bi = 0, ni = 0, ri = 0, budget = 0, last = performance.now(), done = false, caretEl = null;
+    const setCaret = el => {
+        if (caretEl === el) return;
+        if (caretEl) caretEl.classList.remove('typing-caret');
+        caretEl = el;
+        if (el) el.classList.add('typing-caret');
+    };
+    const unhide = (el, stop) => {           // show the li / tr / chip that holds this text
+        for (let e = el; e && e !== stop; e = e.parentElement) e.classList.remove('row-hidden');
+    };
+    const finish = () => {
+        if (done) return;
+        done = true;
+        for (const p of plan) {
+            p.el.classList.remove('seq-hidden');
+            p.el.querySelectorAll('.row-hidden').forEach(r => r.classList.remove('row-hidden'));
+            if (p.nodes) p.nodes.forEach(x => { x.n.data = x.full; });
+        }
+        setCaret(null);
+        message.classList.remove('revealing');
+        skip.remove();
+    };
+    skip.addEventListener('click', e => { e.stopPropagation(); finish(); });
+    content.addEventListener('click', finish, { once: true });
+
+    const frame = now => {
+        if (done) return;
+        if (!message.isConnected) return finish();   // the user switched chats
+        budget += (now - last) * rate;
+        last = now;
+        const nearBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight < 140;
+
+        while (budget > 0 && bi < plan.length) {
+            const p = plan[bi];
+            if (p.el.classList.contains('seq-hidden')) {
+                p.el.classList.remove('seq-hidden');
+                p.el.classList.add('seq-in');
+            }
+            if (p.rows && ri < p.rows.length) {
+                p.rows[ri++].classList.remove('row-hidden');
+                budget -= CODE_LINE_COST;
+                setCaret(null);
+                continue;
+            }
+            if (p.nodes && ni < p.nodes.length) {
+                const t = p.nodes[ni];
+                if (!t.n.data) unhide(t.n.parentElement, p.el);
+                const take = Math.min(t.full.length - t.n.data.length, Math.ceil(budget));
+                t.n.data = t.full.slice(0, t.n.data.length + take);
+                budget -= take;
+                setCaret(t.n.parentElement);
+                if (t.n.data.length === t.full.length) ni++;
+                continue;
+            }
+            p.el.querySelectorAll('.row-hidden').forEach(r => r.classList.remove('row-hidden'));
+            bi++; ni = 0; ri = 0;
+        }
+
+        if (nearBottom) chatArea.scrollTop = chatArea.scrollHeight;
+        if (bi >= plan.length) return finish();
+        requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+}
+
 // =====================================================
-//  LOADING
+//  LOADING — "thinking" indicator with stages
 // =====================================================
+const THINKING_STAGES = [
+    'Understanding your question',
+    'Searching the textbooks',
+    'Reading the most relevant passages',
+    'Writing a clear explanation',
+];
+const loadingTimers = {};
+
 function showLoading() {
     const id = 'loading-' + Date.now();
     const div = document.createElement('div');
-    div.className = 'message assistant';
+    div.className = 'message assistant thinking';
     div.id = id;
     div.innerHTML = `
         <div class="message-inner">
-            <div class="msg-avatar">⚡</div>
+            <div class="ai-avatar">${LOGO_SVG}</div>
             <div class="msg-body">
                 <div class="msg-sender">DSA Assistant</div>
-                <div class="msg-content">
-                    <div class="loading">
-                        <div class="loading-label">
-                            <div class="loading-dots">
-                                <div class="loading-dot"></div>
-                                <div class="loading-dot"></div>
-                                <div class="loading-dot"></div>
-                            </div>
-                            <span>Thinking…</span>
-                        </div>
-                        <div class="loading-skeleton">
-                            <div class="skeleton-bar"></div>
-                            <div class="skeleton-bar"></div>
-                            <div class="skeleton-bar"></div>
-                        </div>
-                    </div>
+                <div class="thinking-box" role="status" aria-live="polite">
+                    <div class="thinking-stage"><span class="mini-book" aria-hidden="true"><i></i><i></i></span><span class="stage-text">${THINKING_STAGES[0]}…</span><span class="elapsed">0s</span></div>
+                    <div class="thinking-steps">${THINKING_STAGES.map((_, i) => `<span class="${i === 0 ? 'active' : ''}"></span>`).join('')}</div>
+                    <div class="skeleton"><i></i><i></i><i></i></div>
                 </div>
             </div>
         </div>`;
     chatContainer.appendChild(div);
     scrollBottom();
+
+    let stage = 0, seconds = 0;
+    const elapsed = div.querySelector('.elapsed');
+    loadingTimers[id] = setInterval(() => {
+        elapsed.textContent = `${++seconds}s`;
+        if (seconds % 3 || stage >= THINKING_STAGES.length - 1) return;
+        stage++;
+        const text = div.querySelector('.stage-text');
+        text.textContent = THINKING_STAGES[stage] + '…';
+        text.classList.remove('swap'); void text.offsetWidth; text.classList.add('swap');
+        div.querySelectorAll('.thinking-steps span').forEach((s, i) => {
+            s.className = i < stage ? 'done' : i === stage ? 'active' : '';
+        });
+    }, 1000);
     return id;
 }
 
 function removeLoading(id) {
+    clearInterval(loadingTimers[id]);
+    delete loadingTimers[id];
     const el = document.getElementById(id);
     if (el) el.remove();
 }
@@ -381,16 +635,16 @@ async function ingestPDFs() {
 
     btn.disabled = true;
     icon.classList.add('spinning');
-    label.textContent = 'Indexing...';
-    showToast('⚙️ Indexing PDF documents...', 'info', 3500);
+    label.textContent = 'Indexing…';
+    showToast('Indexing the PDF library…', 'info', 3500);
 
     try {
         const res  = await fetch('/api/ingest', { method: 'POST', headers: HEADERS });
         const data = await res.json();
-        if (res.ok) showToast('✅ PDFs indexed! Ready to answer.', 'success', 4000);
-        else        showToast('❌ ' + (data.error || 'Indexing failed.'), 'error', 4000);
+        if (res.ok) showToast('Library indexed and ready.', 'success', 4000);
+        else        showToast(data.error || 'Indexing failed.', 'error', 4000);
     } catch (e) {
-        showToast('❌ Server unreachable. Is Flask running?', 'error', 4000);
+        showToast('Server unreachable. Please try again.', 'error', 4000);
     }
 
     btn.disabled = false;
@@ -400,9 +654,17 @@ async function ingestPDFs() {
 
 
 let toastTimer = null;
-function showToast(message, type = 'info', duration = 3000) {
+// action: optional { label, onClick } shown as a button inside the toast
+function showToast(message, type = 'info', duration = 3000, action = null) {
     toastEl.textContent = message;
-    toastEl.className = `toast ${type} show`;
+    toastEl.className = `toast ${type} show${action ? ' has-action' : ''}`;
+    if (action) {
+        const btn = document.createElement('button');
+        btn.className = 'toast-action';
+        btn.textContent = action.label;
+        btn.addEventListener('click', () => { toastEl.classList.remove('show'); action.onClick(); });
+        toastEl.appendChild(btn);
+    }
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), duration);
 }
@@ -410,7 +672,7 @@ function showToast(message, type = 'info', duration = 3000) {
 
 questionInput.addEventListener('input', function () {
     this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
 });
 
 function handleKeyPress(e) {
@@ -420,12 +682,24 @@ function handleKeyPress(e) {
     }
 }
 
+// Spotlight that follows the cursor on suggestion cards
+document.querySelectorAll('.suggestion').forEach((card, i) => {
+    card.style.setProperty('--i', i);
+    card.addEventListener('pointermove', e => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+        card.style.setProperty('--my', `${e.clientY - r.top}px`);
+    });
+});
+
 
 // ══════════════════════════════════════════════════════════════
 //  PDF UPLOAD MODAL
 // ══════════════════════════════════════════════════════════════
 
 let _selectedPdfFile = null;
+// The upload result replaces the footer; reset restores the original buttons.
+const _pdfFooterHtml = document.getElementById('pdfModalFooter').innerHTML;
 
 function openUploadModal() {
     document.getElementById('pdfModalOverlay').classList.add('open');
@@ -446,6 +720,7 @@ function closePdfModalOnBackdrop(e) {
 function resetUploadModal() {
     _selectedPdfFile = null;
     document.getElementById('pdfFileInput').value = '';
+    document.getElementById('pdfModalFooter').innerHTML = _pdfFooterHtml;
     document.getElementById('pdfFilePreview').style.display  = 'none';
     document.getElementById('pdfProgress').style.display     = 'none';
     document.getElementById('pdfResult').style.display       = 'none';
@@ -487,7 +762,7 @@ function pdfDrop(e) {
 
 function applyPdfFile(file) {
     if (!file.name.toLowerCase().endsWith('.pdf')) {
-        showToast('⚠️ Only PDF files are accepted', 'error', 3000);
+        showToast('Only PDF files are accepted', 'error', 3000);
         return;
     }
     _selectedPdfFile = file;
@@ -506,7 +781,6 @@ function formatBytes(bytes) {
 function startPdfUpload() {
     if (!_selectedPdfFile) return;
 
-    // Switch to progress view
     document.getElementById('pdfDropZone').style.display    = 'none';
     document.getElementById('pdfFilePreview').style.display = 'none';
     document.getElementById('pdfProgress').style.display    = 'block';
@@ -518,7 +792,6 @@ function startPdfUpload() {
     const label = document.getElementById('pdfProgressLabel');
     const sub   = document.getElementById('pdfProgressSub');
 
-    // Animate upload progress with XHR
     const formData = new FormData();
     formData.append('file', _selectedPdfFile);
 
@@ -532,13 +805,13 @@ function startPdfUpload() {
         }
     });
 
-    // Simulate indexing progress (40%-95%) with interval
+    // Simulate indexing progress (40%-92%) while the server embeds chunks
     let fakeP = 40;
     let fakeInterval;
 
     xhr.upload.addEventListener('load', () => {
-        label.textContent = 'Indexing into vector database...';
-        sub.textContent   = 'Embedding chunks — this may take a minute...';
+        label.textContent = 'Indexing into vector database…';
+        sub.textContent   = 'Embedding chunks — this may take a minute…';
         fakeInterval = setInterval(() => {
             fakeP = Math.min(fakeP + Math.random() * 3, 92);
             bar.style.width = fakeP + '%';
@@ -562,34 +835,33 @@ function startPdfUpload() {
                 resultEl.innerHTML = `
                     <div class="pdf-result-icon ${isAlready ? 'warn' : 'success'}">
                         ${isAlready
-                            ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
-                            : '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+                            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+                            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
                         }
                     </div>
-                    <p class="pdf-result-title">${isAlready ? 'Already Indexed' : 'Successfully Indexed!'}</p>
-                    <p class="pdf-result-msg">${data.message}</p>
+                    <p class="pdf-result-title">${isAlready ? 'Already in your library' : 'Textbook indexed'}</p>
+                    <p class="pdf-result-msg">${escapeHtml(data.message)}</p>
                     ${data.chunks ? `<div class="pdf-result-stats">
-                        <span>📄 ${data.chunks} chunks stored</span>
-                        <span>⏱ ${data.total_time}s total</span>
-                        <span>🔗 ${data.embed_time}s embedding</span>
+                        <span>${data.chunks} chunks stored</span>
+                        <span>${data.total_time}s total</span>
+                        <span>${data.embed_time}s embedding</span>
                     </div>` : ''}
                 `;
-                showToast(isAlready ? `ℹ️ Already indexed` : `✅ ${data.filename} indexed!`, isAlready ? 'info' : 'success', 4000);
+                showToast(isAlready ? 'Already indexed' : `${data.filename} indexed`, isAlready ? 'info' : 'success', 4000);
             } else {
                 resultEl.innerHTML = `
                     <div class="pdf-result-icon error">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                     </div>
-                    <p class="pdf-result-title">Upload Failed</p>
-                    <p class="pdf-result-msg">${data.error || 'Unknown error occurred.'}</p>
+                    <p class="pdf-result-title">Upload failed</p>
+                    <p class="pdf-result-msg">${escapeHtml(data.error || 'Unknown error occurred.')}</p>
                 `;
-                showToast('❌ Upload failed: ' + (data.error || 'Unknown'), 'error', 4000);
+                showToast('Upload failed: ' + (data.error || 'Unknown'), 'error', 4000);
             }
         } catch {
             resultEl.innerHTML = '<p class="pdf-result-msg">Unexpected server response.</p>';
         }
 
-        // Show a close button
         document.getElementById('pdfModalFooter').innerHTML =
             '<button class="pdf-btn-primary" onclick="closeUploadModal()">Done</button>';
         document.getElementById('pdfModalFooter').style.display = 'flex';
@@ -601,14 +873,14 @@ function startPdfUpload() {
         const resultEl = document.getElementById('pdfResult');
         resultEl.style.display = 'block';
         resultEl.innerHTML = `
-            <div class="pdf-result-icon error"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
-            <p class="pdf-result-title">Network Error</p>
+            <div class="pdf-result-icon error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+            <p class="pdf-result-title">Network error</p>
             <p class="pdf-result-msg">Could not reach the server. Check your connection.</p>
         `;
         document.getElementById('pdfModalFooter').innerHTML =
             '<button class="pdf-btn-primary" onclick="closeUploadModal()">Close</button>';
         document.getElementById('pdfModalFooter').style.display = 'flex';
-        showToast('❌ Network error during upload', 'error', 4000);
+        showToast('Network error during upload', 'error', 4000);
     });
 
     xhr.open('POST', '/api/upload-pdf');
@@ -617,7 +889,7 @@ function startPdfUpload() {
 
 
 function scrollBottom() {
-    chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
+    chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: REDUCED_MOTION ? 'auto' : 'smooth' });
     if (scrollBtn) scrollBtn.classList.remove('visible');
 }
 
@@ -625,190 +897,217 @@ function scrollBottom() {
 chatArea.addEventListener('scroll', () => {
     if (!scrollBtn) return;
     const distFromBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight;
-    if (distFromBottom > 120) {
-        scrollBtn.classList.add('visible');
-    } else {
-        scrollBtn.classList.remove('visible');
-    }
+    scrollBtn.classList.toggle('visible', distFromBottom > 120);
 });
 
 
+// =====================================================
+//  MARKDOWN → HTML
+//  Text is escaped first; only the markup below is turned into tags.
+// =====================================================
 function formatMessage(text) {
-
-    // ═══════════════════════════════════════════════════════════
-    //  STEP 1 — Extract ALL fenced code blocks into placeholders
-    //           so nothing inside them gets processed as markdown.
-    // ═══════════════════════════════════════════════════════════
     const codeBlocks = [];
-    const idPrefix   = 'cb-' + Date.now() + '-';   // unique across sessions
-    let   ci         = 0;
 
-    // Strip stray ```markdown and lone ``` lines first
-    text = text.replace(/^```markdown\s*\n?/gim, '');
+    // Answers sometimes arrive wrapped in a ```markdown fence — unwrap it.
+    text = text.replace(/\r\n/g, '\n');
+    const wrapped = text.match(/^\s*```(?:markdown|md)\s*\n([\s\S]*?)\n```\s*$/i);
+    if (wrapped) text = wrapped[1];
+    text = text.replace(/^```(?:markdown|md)\s*\n?/gim, '');
 
-    // Extract every fenced block (greedy-safe with [^`] trick)
-    text = text.replace(/```([\w+-]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-        lang = (lang || '').trim();
-        code = code
-            .replace(/\r\n/g, '\n')       // CRLF → LF
-            .replace(/\t/g,   '    ')     // tabs  → 4 spaces
-            .trimEnd();                   // remove trailing blank lines only
-
-        const id      = idPrefix + ci;
-        const lbl     = (lang || 'code').toLowerCase();
-        const lblShow = (lang || 'CODE').toUpperCase();
-        codeBlocks.push({ id, lbl, lblShow, code });
-        ci++;
-        // Surround placeholder with newlines so paragraph-split never joins it
-        return '\n\n%%CB' + (ci - 1) + '%%\n\n';
+    // 1. Pull fenced code blocks out so nothing inside them is treated as markdown.
+    text = text.replace(/```([\w+#-]*)[^\n]*\n?([\s\S]*?)```/g, (_, lang, code) => {
+        codeBlocks.push({ lang: (lang || '').toLowerCase(), code: code.replace(/\t/g, '    ').trimEnd() });
+        return '\n\n%%CB' + (codeBlocks.length - 1) + '%%\n\n';
     });
 
-    // ═══════════════════════════════════════════════════════════
-    //  STEP 2 — Process markdown on the REMAINING (non-code) text
-    // ═══════════════════════════════════════════════════════════
+    // The answer can echo PDF text or user input — escape it before turning markdown into HTML.
+    text = escapeHtml(text);
 
-    // Blockquotes
-    text = text.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
-    text = text.replace(/^> (.+)$/gm,    '<blockquote>$1</blockquote>');
+    // "* item" bullets → "- item" so the italic rule below can't pair them up.
+    text = text.replace(/^(\s*)\*\s+/gm, '$1- ');
 
-    // Headings
-    text = text.replace(/^#### (.+)$/gm, '<h4 class="md-h4">$1</h4>');
-    text = text.replace(/^### (.+)$/gm,  '<h3 class="md-h3">$1</h3>');
-    text = text.replace(/^## (.+)$/gm,   '<h2 class="md-h2">$1</h2>');
-    text = text.replace(/^# (.+)$/gm,    '<h1 class="md-h1">$1</h1>');
-
-    // Horizontal rule
-    text = text.replace(/^---+$/gm, '<hr class="md-hr">');
-
-    // Bold / Italic
+    // 2. Inline formatting
     text = text.replace(/\*\*\*([^*\n]+)\*\*\*/g, '<strong><em>$1</em></strong>');
     text = text.replace(/\*\*([^*\n]+)\*\*/g,     '<strong>$1</strong>');
     text = text.replace(/__([^_\n]+)__/g,          '<strong>$1</strong>');
-    text = text.replace(/\*([^*\n]+)\*/g,          '<em>$1</em>');
-
-    // Inline code  (only single-line, no accidental multi-line capture)
+    text = text.replace(/(^|[^\w*])\*([^*\n]+)\*(?!\w)/g, '$1<em>$2</em>');
     text = text.replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
 
-    // Ordered list  (must start at beginning of line)
-    text = text.replace(/((?:^\d+[.)]\s.+(?:\n|$))+)/gm, match => {
-        const lis = match.trim()
-            .split(/\n(?=\d+[.)]\s)/)
-            .map(i => `<li>${i.replace(/^\d+[.)]\s+/, '')}</li>`)
-            .join('');
-        return `<ol>${lis}</ol>`;
-    });
+    // 3. Block elements
+    text = text.replace(/^#### (.+)$/gm, '\n<h4>$1</h4>\n');
+    text = text.replace(/^### (.+)$/gm,  '\n<h3>$1</h3>\n');
+    text = text.replace(/^## (.+)$/gm,   '\n<h2>$1</h2>\n');
+    text = text.replace(/^# (.+)$/gm,    '\n<h1>$1</h1>\n');
+    text = text.replace(/((?:^\|.*\|[ \t]*(?:\n|$))+)/gm, block => '\n\n' + renderTable(block) + '\n\n');
+    text = text.replace(/^(?:-{3,}|\*{3,}|_{3,})\s*$/gm, '\n<hr>\n');
+    text = text.replace(/((?:^&gt; ?.*(?:\n|$))+)/gm, block =>
+        '\n\n<blockquote><p>' + block.trim().split('\n').map(l => l.replace(/^&gt; ?/, '')).join('<br>') + '</p></blockquote>\n\n');
+    text = renderLists(text);
 
-    // Unordered list
-    text = text.replace(/((?:^[ \t]*[-*+]\s.+(?:\n|$))+)/gm, match => {
-        const lis = match.trim()
-            .split(/\n(?=[ \t]*[-*+]\s)/)
-            .map(i => `<li>${i.replace(/^[ \t]*[-*+]\s+/, '')}</li>`)
-            .join('');
-        return `<ul>${lis}</ul>`;
-    });
-
-    // ═══════════════════════════════════════════════════════════
-    //  STEP 3 — Paragraph-wrap plain text blocks
-    //           Skip HTML blocks and code placeholders
-    // ═══════════════════════════════════════════════════════════
+    // 4. Paragraphs — anything that isn't already a block element
     text = text
         .split(/\n{2,}/)
         .map(block => {
             block = block.trim();
             if (!block) return '';
-            // Already HTML
-            if (/^<(h[1-6]|ul|ol|blockquote|hr|div|p)/.test(block)) return block;
-            // Code block placeholder — never wrap
+            if (/^<(h[1-6]|ul|ol|blockquote|hr|div|table|p)\b/.test(block)) return block;
             if (/^%%CB\d+%%$/.test(block)) return block;
-            // Block that contains a placeholder (mixed line) — emit as-is
-            if (/%%CB\d+%%/.test(block)) return block;
             return `<p>${block.replace(/\n/g, '<br>')}</p>`;
         })
         .join('\n');
 
-    // ═══════════════════════════════════════════════════════════
-    //  STEP 4 — Build and inject rendered code blocks
-    // ═══════════════════════════════════════════════════════════
-    const langColors = {
-        python: '#3572A5', javascript: '#f1e05a', js:   '#f1e05a',
-        ts:     '#2b7489', typescript:  '#2b7489', java: '#b07219',
-        cpp:    '#f34b7d', c:           '#555555', cs:   '#178600',
-        go:     '#00ADD8', rust:        '#dea584', ruby: '#701516',
-        html:   '#e34c26', css:         '#563d7c', sql:  '#336791',
-        bash:   '#89e051', sh:          '#89e051', json: '#c9510c',
-        xml:    '#0060ac', php:         '#4F5D95', swift:'#ffac45',
-        kotlin: '#A97BFF', dart:        '#00B4AB', yaml: '#cb171e',
-        r:      '#198ce7', scala:       '#c22d40', pseudocode:'#9e9e9e',
-        algo:   '#9e9e9e', text:        '#888888', code: '#e53935',
-    };
-
+    // 5. Code blocks back in
     codeBlocks.forEach((cb, idx) => {
-        const escaped   = escapeHtml(cb.code);
-        const lineCount = cb.code.split('\n').length;
-        const langColor = langColors[cb.lbl] || '#e53935';
-
-        // Line-numbered rows
-        const rows = escaped.split('\n').map((line, i) =>
-            `<span class="code-row">` +
-            `<span class="line-num">${i + 1}</span>` +
-            `<span class="line-code">${line || ' '}</span>` +
-            `</span>`
-        ).join('\n');
-
-        const html =
-            `<div class="code-block">` +
-              `<div class="code-block-header">` +
-                `<div class="code-traffic-lights">` +
-                  `<span class="traffic-dot red"></span>` +
-                  `<span class="traffic-dot yellow"></span>` +
-                  `<span class="traffic-dot green"></span>` +
-                `</div>` +
-                `<span class="code-lang">` +
-                  `<span class="lang-dot" style="background:${langColor};box-shadow:0 0 6px ${langColor}55;"></span>` +
-                  `${cb.lblShow}` +
-                `</span>` +
-                `<div class="code-header-right">` +
-                  `<span class="code-line-count">${lineCount} line${lineCount !== 1 ? 's' : ''}</span>` +
-                  `<button class="copy-btn" onclick="copyCode('${cb.id}')" id="copybtn-${cb.id}">` +
-                    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">` +
-                      `<rect x="9" y="9" width="13" height="13" rx="2"/>` +
-                      `<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>` +
-                    `</svg>Copy` +
-                  `</button>` +
-                `</div>` +
-              `</div>` +
-              `<div class="code-body">` +
-                `<pre class="code-pre"><code id="${cb.id}" class="code-content lang-${cb.lbl}">${rows}</code></pre>` +
-              `</div>` +
-            `</div>`;
-
-        text = text.replace(`%%CB${idx}%%`, html);
+        text = text.replace(`%%CB${idx}%%`, () => buildCodeBlock(cb.code, cb.lang));
     });
-
     return text;
+}
+
+// Markdown table (already escaped) → HTML table. Returns the input unchanged if it isn't one.
+function renderTable(block) {
+    const rows = block.trim().split('\n');
+    const cells = r => r.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+    if (rows.length < 2 || !/^\|?[\s:|-]+\|?$/.test(rows[1].trim()) || !rows[1].includes('-')) return block;
+    const head = cells(rows[0]).map(c => `<th>${c}</th>`).join('');
+    const body = rows.slice(2).map(r => '<tr>' + cells(r).map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
+    return `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+// Line-based list parser: nested lists by indentation, numbering kept across interruptions.
+function renderLists(text) {
+    const itemRe = /^(\s*)([-+]|\d+[.)])\s+(.*)$/;
+    const lines = text.split('\n');
+    const out = [];
+    let i = 0;
+    while (i < lines.length) {
+        if (!itemRe.test(lines[i])) { out.push(lines[i++]); continue; }
+        const block = [];
+        while (i < lines.length) {
+            const line = lines[i];
+            if (itemRe.test(line) || (/^\s+\S/.test(line) && !/^\s*</.test(line))) { block.push(line); i++; continue; }
+            // a blank line inside a list is fine if the list carries on after it
+            if (!line.trim() && i + 1 < lines.length && (itemRe.test(lines[i + 1]) || /^\s+\S/.test(lines[i + 1]))) { i++; continue; }
+            break;
+        }
+        out.push('\n' + buildList(block, itemRe) + '\n');
+    }
+    return out.join('\n');
+}
+
+function buildList(block, itemRe) {
+    const root = { indent: -1, children: [] };
+    const stack = [root];
+    for (const line of block) {
+        const m = line.match(itemRe);
+        if (!m) { stack[stack.length - 1].text += ' ' + line.trim(); continue; }
+        const indent = m[1].replace(/\t/g, '    ').length;
+        while (stack.length > 1 && indent <= stack[stack.length - 1].indent) stack.pop();
+        const item = { indent, ordered: /\d/.test(m[2]), start: parseInt(m[2], 10) || 1, text: m[3], children: [] };
+        stack[stack.length - 1].children.push(item);
+        stack.push(item);
+    }
+    const render = items => {
+        let html = '';
+        for (let k = 0; k < items.length;) {
+            const ordered = items[k].ordered;
+            const group = [];
+            while (k < items.length && items[k].ordered === ordered) group.push(items[k++]);
+            const tag = ordered ? 'ol' : 'ul';
+            const start = ordered && group[0].start > 1 ? ` start="${group[0].start}"` : '';
+            html += `<${tag}${start}>` + group.map(it => `<li>${it.text}${it.children.length ? render(it.children) : ''}</li>`).join('') + `</${tag}>`;
+        }
+        return html;
+    };
+    return render(root.children);
+}
+
+// =====================================================
+//  CODE BLOCKS + LIGHTWEIGHT SYNTAX HIGHLIGHTING
+// =====================================================
+const LANG_NAMES = {
+    cpp: 'C++', 'c++': 'C++', c: 'C', cs: 'C#', csharp: 'C#', java: 'Java', py: 'Python', python: 'Python',
+    js: 'JavaScript', javascript: 'JavaScript', ts: 'TypeScript', typescript: 'TypeScript', go: 'Go',
+    rust: 'Rust', rb: 'Ruby', ruby: 'Ruby', kotlin: 'Kotlin', swift: 'Swift', sql: 'SQL', bash: 'Bash',
+    sh: 'Shell', json: 'JSON', pseudocode: 'Pseudocode', algo: 'Pseudocode', text: 'Text', '': 'Code',
+};
+const LANG_COLORS = {
+    python: '#3572A5', py: '#3572A5', javascript: '#f1e05a', js: '#f1e05a', ts: '#3178c6', typescript: '#3178c6',
+    java: '#b07219', cpp: '#f34b7d', 'c++': '#f34b7d', c: '#a8b9cc', cs: '#178600', go: '#00ADD8', rust: '#dea584',
+    ruby: '#cc342d', sql: '#e38c00', bash: '#89e051', sh: '#89e051', kotlin: '#A97BFF', swift: '#ffac45',
+};
+const KEYWORDS = new Set(('if else elif for while do return break continue switch case default class struct public private protected ' +
+    'static void int long short float double char bool boolean byte true false null nullptr None True False def lambda import from as ' +
+    'new delete this self try catch except finally throw throws raise const let var function template typename using namespace ' +
+    'include auto in not and or is pass yield with extends implements interface enum final virtual override unsigned sizeof ' +
+    'String string vector map set list dict tuple queue stack deque pair Node undefined async await fn mut impl pub match').split(' '));
+
+const escHtml = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function highlightCode(code, lang) {
+    const hashComments = /^(py|python|bash|sh|shell|ruby|rb|r|yaml|yml|perl)$/.test(lang);
+    const re = new RegExp([
+        hashComments ? '(#.*$)' : '(\\/\\/.*$)',            // 1 line comment
+        '(\\/\\*.*?\\*\\/)',                                // 2 inline block comment
+        '("(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\')', // 3 string
+        '(\\b\\d+(?:\\.\\d+)?\\b)',                         // 4 number
+        '(\\b[A-Za-z_]\\w*)(?=\\s*\\()',                    // 5 call
+        '(\\b[A-Za-z_]\\w*\\b)',                            // 6 word
+    ].join('|'), 'g');
+
+    return code.split('\n').map(line => {
+        let out = '', last = 0;
+        line.replace(re, (m, c1, c2, str, num, call, word, idx) => {
+            out += escHtml(line.slice(last, idx));
+            const cls = c1 || c2 ? 'c' : str ? 's' : num ? 'n'
+                      : call ? (KEYWORDS.has(call) ? 'k' : 'f')
+                      : KEYWORDS.has(word) ? 'k' : '';
+            out += cls ? `<span class="tok-${cls}">${escHtml(m)}</span>` : escHtml(m);
+            last = idx + m.length;
+            return m;
+        });
+        return out + escHtml(line.slice(last));
+    });
+}
+
+let codeBlockSeq = 0;
+function buildCodeBlock(code, lang) {
+    const id = 'cb-' + (++codeBlockSeq);
+    const lines = highlightCode(code, lang);
+    const name = LANG_NAMES[lang] || lang.toUpperCase();
+    const color = LANG_COLORS[lang] || 'var(--accent)';
+    const rows = lines.map((line, i) =>
+        `<span class="code-row"><span class="line-num">${i + 1}</span><span class="line-code">${line || ' '}</span></span>`
+    ).join('\n');
+
+    return `<div class="code-block">` +
+        `<div class="code-block-header">` +
+            `<div class="code-traffic-lights"><span class="traffic-dot"></span><span class="traffic-dot"></span><span class="traffic-dot"></span></div>` +
+            `<span class="code-lang"><span class="lang-dot" style="background:${color}"></span>${escHtml(name)}</span>` +
+            `<div class="code-header-right">` +
+                `<span class="code-line-count">${lines.length} line${lines.length !== 1 ? 's' : ''}</span>` +
+                `<button class="copy-btn" onclick="copyCode('${id}')" id="copybtn-${id}">${COPY_SVG}<span>Copy</span></button>` +
+            `</div>` +
+        `</div>` +
+        `<div class="code-body"><pre class="code-pre"><code id="${id}" class="code-content lang-${escHtml(lang || 'code')}">${rows}</code></pre></div>` +
+    `</div>`;
 }
 
 function copyCode(codeId) {
     const el = document.getElementById(codeId);
-    // Extract just the code lines (not line numbers)
+    // Just the code lines, not the line numbers
     const lineEls = el.querySelectorAll('.line-code');
-    const text = lineEls.length
-        ? Array.from(lineEls).map(s => s.textContent).join('\n')
-        : el.textContent;
+    const text = lineEls.length ? Array.from(lineEls).map(s => s.textContent).join('\n') : el.textContent;
+    copyText(text, document.getElementById('copybtn-' + codeId));
+}
 
+function copyText(text, btn) {
     navigator.clipboard.writeText(text).then(() => {
-        const btn = document.getElementById('copybtn-' + codeId);
         if (!btn) return;
         const original = btn.innerHTML;
-        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!`;
-        btn.style.color = '#22c55e';
-        btn.style.borderColor = '#22c55e';
-        setTimeout(() => {
-            btn.innerHTML = original;
-            btn.style.color = '';
-            btn.style.borderColor = '';
-        }, 2000);
-    });
+        btn.classList.add('copied');
+        btn.innerHTML = `${CHECK_SVG}<span>Copied</span>`;
+        setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = original; }, 1800);
+    }).catch(() => showToast('Could not copy to clipboard.', 'error'));
 }
 
 

@@ -16,7 +16,13 @@ app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app)
 
 
-app.secret_key = os.environ.get("SECRET_KEY", "dsa-assistant-secret-2024")
+app.secret_key = os.environ.get("SECRET_KEY")
+if not app.secret_key:
+    raise RuntimeError("SECRET_KEY is not set. Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\"")
+
+# Cookie isn't sent on cross-site POST/DELETE/PATCH, which blocks CSRF on the JSON API.
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
 
 
 init_db()
@@ -28,6 +34,10 @@ app.register_blueprint(chat_bp)
 app.register_blueprint(ingest_bp)
 app.register_blueprint(sessions_bp)
 
+
+@app.errorhandler(400)
+def bad_request(e):
+    return jsonify({"error": e.description or "Bad request"}), 400
 
 @app.errorhandler(404)
 def not_found(e):

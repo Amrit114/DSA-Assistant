@@ -1,6 +1,5 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 import os
-from auth import check_api_key
 from db.vector_store import store_documents, get_ingested_files
 from loaders.pdf_loader import load_and_split_pdfs_from_directory
 from config import PDF_DIR
@@ -10,8 +9,8 @@ ingest_bp = Blueprint("ingest", __name__)
 
 @ingest_bp.route("/api/ingest", methods=["POST"])
 def ingest_api():
-    if not check_api_key(request):
-        return jsonify({"error": "Unauthorized"}), 401
+    if "user_id" not in session:
+        return jsonify({"error": "Login required"}), 401
 
     
     already_ingested = get_ingested_files()
@@ -73,7 +72,6 @@ def upload_pdf():
     Saves it to PDF_DIR then runs the ingest pipeline on just that file.
     No authentication header required — user must be logged-in (session).
     """
-    from flask import session
 
     # Must be logged in
     if "user_id" not in session:
