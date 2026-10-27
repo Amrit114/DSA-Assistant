@@ -5,83 +5,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DSA Assistant</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
     <script src="/static/theme.js"></script>
     <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/pdf_upload.css" />
 </head>
 <body>
 
 
 <aside class="sidebar" id="sidebar">
 
-    <!-- COLLAPSED: expand button shown only when collapsed -->
+    <!-- Expand button (only visible when sidebar is collapsed) -->
     <button class="sidebar-expand-btn" id="sidebarExpandBtn" onclick="toggleSidebarCollapse()" title="Expand sidebar" aria-label="Expand sidebar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"/>
         </svg>
     </button>
 
+    <!-- ── Brand Header ────────────────────────── -->
     <div class="sidebar-brand">
+        <div class="brand-gradient-bg" aria-hidden="true"></div>
         <div class="brand-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
         </div>
         <div class="brand-text">
             <span class="brand-name">DSA<span class="brand-accent">Book</span></span>
-            <span class="brand-sub">Assistant &middot; RAG</span>
+            <span class="brand-sub">AI · RAG Assistant</span>
         </div>
-        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebarCollapse()" title="Collapse sidebar" aria-label="Collapse sidebar">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="3" y1="6" x2="21" y2="6"/>
-                <line x1="3" y1="12" x2="21" y2="12"/>
-                <line x1="3" y1="18" x2="21" y2="18"/>
+        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebarCollapse()" title="Collapse sidebar" aria-label="Toggle sidebar">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/>
             </svg>
         </button>
     </div>
 
-    <button class="new-chat-btn" onclick="startNewChat()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span class="new-chat-label">New Conversation</span>
-    </button>
-
-    <div class="sidebar-search">
-        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="searchInput" placeholder="Search conversations..." oninput="filterSessions(this.value)" />
+    <!-- ── New Chat Button ────────────────────── -->
+    <div class="sidebar-actions">
+        <button class="new-chat-btn" onclick="startNewChat()">
+            <svg class="new-chat-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span class="new-chat-label">New Chat</span>
+        </button>
     </div>
 
+    <!-- ── Search ─────────────────────────────── -->
+    <div class="sidebar-search">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search chats..." oninput="filterSessions(this.value)" />
+        <kbd class="search-shortcut" aria-hidden="true">Ctrl K</kbd>
+    </div>
+
+    <!-- ── Session List ───────────────────────── -->
     <div class="sessions-scroll" id="sessionsList">
         <div class="sessions-empty">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <p>No conversations yet</p>
+            <div class="sessions-empty-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+            </div>
+            <p>No chats yet</p>
+            <span>Start a conversation above</span>
         </div>
     </div>
 
+    <!-- ── Footer ─────────────────────────────── -->
     <div class="sidebar-footer">
-        
+
+        <!-- User card -->
         <div class="user-card">
             <div class="user-avatar" id="userAvatar">?</div>
             <div class="user-info">
                 <span class="user-name" id="sidebarUsername">Loading...</span>
                 <span class="user-email" id="sidebarEmail"></span>
             </div>
-            <a href="/logout" class="logout-btn" title="Logout">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <a href="/logout" class="logout-btn" title="Sign out">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
             </a>
         </div>
 
-        <button class="footer-btn ingest-btn" id="ingestBtn" onclick="ingestPDFs()" title="Index PDFs">
-            <span class="ingest-icon" id="ingestIcon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-            </span>
-            <span id="ingestLabel" class="footer-btn-label">Index PDFs</span>
-        </button>
-        <button class="footer-btn theme-btn" onclick="toggleTheme()" title="Toggle theme">
-            <span data-theme-icon></span>
-            <span data-theme-label class="footer-btn-label">Light Mode</span>
-        </button>
-        <button class="footer-btn danger-btn" onclick="clearAllChats()" title="Clear all chats">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6m4-6v6"/><path d="M9 6V4h6v2"/></svg>
-            <span class="footer-btn-label">Clear All</span>
-        </button>
+        <!-- Theme selector dots -->
+        <div class="theme-selector">
+            <button class="theme-dot" data-theme-value="midnight" onclick="applyTheme('midnight')" title="Midnight" style="--dot-color: #e53935;"><span></span></button>
+            <button class="theme-dot" data-theme-value="dawn" onclick="applyTheme('dawn')" title="Dawn" style="--dot-color: #d4530a;"><span></span></button>
+            <button class="theme-dot" data-theme-value="ocean" onclick="applyTheme('ocean')" title="Ocean" style="--dot-color: #0ea5e9;"><span></span></button>
+            <button class="theme-dot" data-theme-value="arctic" onclick="applyTheme('arctic')" title="Arctic" style="--dot-color: #6366f1;"><span></span></button>
+        </div>
+
+        <!-- Action row -->
+        <div class="footer-actions">
+            <button class="footer-btn ingest-btn" id="ingestBtn" onclick="ingestPDFs()" title="Index PDFs">
+                <span class="ingest-icon" id="ingestIcon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/>
+                    </svg>
+                </span>
+                <span id="ingestLabel" class="footer-btn-label">Index PDFs</span>
+            </button>
+
+            <button class="footer-btn theme-btn" onclick="toggleTheme()" title="Cycle theme">
+                <span data-theme-icon></span>
+                <span data-theme-label class="footer-btn-label">Theme</span>
+            </button>
+
+            <button class="footer-btn danger-btn" onclick="clearAllChats()" title="Clear all chats">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                    <path d="M10 11v6m4-6v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+                <span class="footer-btn-label">Clear All</span>
+            </button>
+        </div>
+
     </div>
 </aside>
 
@@ -102,20 +144,51 @@
     
     <div class="chat-area" id="chatArea">
 
+        <!-- Ambient animated chat background -->
+        <div class="chat-particles" aria-hidden="true">
+            <div class="ambient-glow-mesh"></div>
+            <div class="ambient-glow-blob blob-1"></div>
+            <div class="ambient-glow-blob blob-2"></div>
+            <div class="ambient-glow-blob blob-3"></div>
+            <div class="ambient-grid-pattern"></div>
+        </div>
+
         
         <div class="welcome-screen" id="emptyState">
+            <div class="welcome-orb welcome-orb--1" aria-hidden="true"></div>
+            <div class="welcome-orb welcome-orb--2" aria-hidden="true"></div>
+            <div class="welcome-orb welcome-orb--3" aria-hidden="true"></div>
             <div class="welcome-glow"></div>
+            <div class="welcome-glow welcome-glow--secondary"></div>
             <div class="welcome-content">
-                <div class="welcome-badge">RAG · Powered by your textbook</div>
+                <div class="welcome-badge"><span class="welcome-badge-dot"></span>Powered by RAG</div>
                 <h1 class="welcome-title">Ask Your<br/><span>DSA Book</span></h1>
                 <p class="welcome-sub">Search for any concept, algorithm, or data structure from your indexed textbook instantly.</p>
                 <div class="welcome-chips">
-                    <button class="chip" onclick="askSuggestion('Explain binary search trees with examples')">🌲 Binary Search Trees</button>
-                    <button class="chip" onclick="askSuggestion('What is time complexity and Big O notation?')">⏱️ Time Complexity</button>
-                    <button class="chip" onclick="askSuggestion('How does quicksort work step by step?')">⚡ Quicksort Algorithm</button>
-                    <button class="chip" onclick="askSuggestion('Difference between stack and queue with use cases')">📦 Stack vs Queue</button>
-                    <button class="chip" onclick="askSuggestion('Explain dynamic programming with examples')">🔄 Dynamic Programming</button>
-                    <button class="chip" onclick="askSuggestion('What is graph traversal BFS and DFS?')">🕸️ BFS & DFS</button>
+                    <button class="chip" onclick="askSuggestion('Explain binary search trees with examples')">
+                        <span class="chip-emoji">🌲</span>
+                        <span class="chip-text"><strong>Binary Search Trees</strong><small>Traversal, insertion &amp; balancing</small></span>
+                    </button>
+                    <button class="chip" onclick="askSuggestion('What is time complexity and Big O notation?')">
+                        <span class="chip-emoji">⏱️</span>
+                        <span class="chip-text"><strong>Time Complexity</strong><small>Big O, Omega &amp; Theta</small></span>
+                    </button>
+                    <button class="chip" onclick="askSuggestion('How does quicksort work step by step?')">
+                        <span class="chip-emoji">⚡</span>
+                        <span class="chip-text"><strong>Quicksort Algorithm</strong><small>Partition, pivot &amp; recursion</small></span>
+                    </button>
+                    <button class="chip" onclick="askSuggestion('Difference between stack and queue with use cases')">
+                        <span class="chip-emoji">📦</span>
+                        <span class="chip-text"><strong>Stack vs Queue</strong><small>LIFO, FIFO &amp; use cases</small></span>
+                    </button>
+                    <button class="chip" onclick="askSuggestion('Explain dynamic programming with examples')">
+                        <span class="chip-emoji">🔄</span>
+                        <span class="chip-text"><strong>Dynamic Programming</strong><small>Memoization &amp; tabulation</small></span>
+                    </button>
+                    <button class="chip" onclick="askSuggestion('What is graph traversal BFS and DFS?')">
+                        <span class="chip-emoji">🕸️</span>
+                        <span class="chip-text"><strong>BFS &amp; DFS</strong><small>Graph traversal strategies</small></span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -134,9 +207,18 @@
     
     <div class="input-zone">
         <div class="input-shell" id="inputShell">
+            <!-- PDF Upload trigger button -->
+            <button id="uploadPdfBtn" class="upload-pdf-btn" onclick="openUploadModal()" title="Upload PDF textbook" aria-label="Upload PDF">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/>
+                    <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+            </button>
             <textarea
                 id="questionInput"
-                placeholder="Ask anything about data structures & algorithms..."
+                placeholder="Ask anything about data structures &amp; algorithms..."
                 rows="1"
                 onkeydown="handleKeyPress(event)"
             ></textarea>
@@ -147,16 +229,129 @@
                 </svg>
             </button>
         </div>
-        <p class="input-hint"><kbd>Enter</kbd> send &nbsp;·&nbsp; <kbd>Shift+Enter</kbd> new line</p>
+        <p class="input-hint"><kbd>Enter</kbd> send &nbsp;·&nbsp; <kbd>Shift+Enter</kbd> new line &nbsp;·&nbsp; <kbd>📎</kbd> upload PDF &nbsp;·&nbsp; <span class="model-indicator">RAG Model</span></p>
     </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════════════════════
+     PDF UPLOAD MODAL
+═══════════════════════════════════════════════════════════ -->
+<div class="pdf-modal-overlay" id="pdfModalOverlay" onclick="closePdfModalOnBackdrop(event)">
+    <div class="pdf-modal" id="pdfModal" role="dialog" aria-modal="true" aria-labelledby="pdfModalTitle">
+
+        <!-- Header -->
+        <div class="pdf-modal-header">
+            <div class="pdf-modal-title-row">
+                <div class="pdf-modal-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="pdf-modal-title" id="pdfModalTitle">Upload PDF Textbook</h2>
+                    <p class="pdf-modal-sub">File is saved to the library and auto-indexed into the vector database</p>
+                </div>
+            </div>
+            <button class="pdf-modal-close" onclick="closeUploadModal()" aria-label="Close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Drop Zone -->
+        <div class="pdf-drop-zone" id="pdfDropZone"
+             ondragover="pdfDragOver(event)"
+             ondragleave="pdfDragLeave(event)"
+             ondrop="pdfDrop(event)"
+             onclick="document.getElementById('pdfFileInput').click()">
+            <input type="file" id="pdfFileInput" accept=".pdf" style="display:none" onchange="pdfFileSelected(event)"/>
+            <div class="pdf-drop-icon" id="pdfDropIcon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+            </div>
+            <p class="pdf-drop-text">Drag &amp; drop your PDF here</p>
+            <p class="pdf-drop-sub">or <span class="pdf-drop-link">browse files</span> &nbsp;·&nbsp; PDF only &nbsp;·&nbsp; any size</p>
+        </div>
+
+        <!-- Selected File Preview -->
+        <div class="pdf-file-preview" id="pdfFilePreview" style="display:none">
+            <div class="pdf-file-info">
+                <div class="pdf-file-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                </div>
+                <div class="pdf-file-meta">
+                    <span class="pdf-file-name" id="pdfFileName">filename.pdf</span>
+                    <span class="pdf-file-size" id="pdfFileSize">0 KB</span>
+                </div>
+                <button class="pdf-file-remove" onclick="clearPdfSelection()" title="Remove">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Bar (shown during upload) -->
+        <div class="pdf-progress" id="pdfProgress" style="display:none">
+            <div class="pdf-progress-header">
+                <span class="pdf-progress-label" id="pdfProgressLabel">Uploading...</span>
+                <span class="pdf-progress-pct" id="pdfProgressPct">0%</span>
+            </div>
+            <div class="pdf-progress-track">
+                <div class="pdf-progress-bar" id="pdfProgressBar"></div>
+            </div>
+            <p class="pdf-progress-sub" id="pdfProgressSub">Saving file to library...</p>
+        </div>
+
+        <!-- Result -->
+        <div class="pdf-result" id="pdfResult" style="display:none"></div>
+
+        <!-- Footer Buttons -->
+        <div class="pdf-modal-footer" id="pdfModalFooter">
+            <button class="pdf-btn-secondary" onclick="closeUploadModal()">Cancel</button>
+            <button class="pdf-btn-primary" id="pdfUploadBtn" onclick="startPdfUpload()" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload &amp; Index
+            </button>
+        </div>
+
+    </div>
+</div>
 
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 
 <div class="toast" id="toast"></div>
 
+<script>
+// Sync theme dots active state
+function syncThemeDots() {
+    const current = document.documentElement.getAttribute('data-theme') || 'midnight';
+    document.querySelectorAll('.theme-dot').forEach(d => {
+        d.classList.toggle('active', d.dataset.themeValue === current);
+    });
+}
+// Patch applyTheme to sync dots
+const _origApply = applyTheme;
+applyTheme = function(theme) {
+    _origApply(theme);
+    syncThemeDots();
+};
+syncThemeDots();
+</script>
 <script src="/static/script.js"></script>
 </body>
 </html>

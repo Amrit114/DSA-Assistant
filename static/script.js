@@ -58,11 +58,37 @@ function toggleSidebarCollapse() {
 })();
 
 function closeSidebarMobile() {
-    if (window.innerWidth <= 800) {
-        document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('sidebarOverlay').classList.remove('show');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('show');
     }
 }
+
+// ── Global Keyboard Shortcuts ──────────────────────
+document.addEventListener('keydown', function(e) {
+    // Ctrl+K or Cmd+K to focus search input
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        const sidebar = document.getElementById('sidebar');
+        const searchInput = document.getElementById('searchInput');
+        if (sidebar && sidebar.classList.contains('collapsed')) {
+            toggleSidebarCollapse();
+        }
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    }
+    // Escape key to close modal
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('pdfModalOverlay');
+        if (modal && modal.classList.contains('open')) {
+            closeUploadModal();
+        }
+    }
+});
 
 // =====================================================
 //  SESSIONS — fetch from server
@@ -393,6 +419,202 @@ function handleKeyPress(e) {
         askQuestion();
     }
 }
+
+
+// ══════════════════════════════════════════════════════════════
+//  PDF UPLOAD MODAL
+// ══════════════════════════════════════════════════════════════
+
+let _selectedPdfFile = null;
+
+function openUploadModal() {
+    document.getElementById('pdfModalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    resetUploadModal();
+}
+
+function closeUploadModal() {
+    document.getElementById('pdfModalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(resetUploadModal, 300);
+}
+
+function closePdfModalOnBackdrop(e) {
+    if (e.target === document.getElementById('pdfModalOverlay')) closeUploadModal();
+}
+
+function resetUploadModal() {
+    _selectedPdfFile = null;
+    document.getElementById('pdfFileInput').value = '';
+    document.getElementById('pdfFilePreview').style.display  = 'none';
+    document.getElementById('pdfProgress').style.display     = 'none';
+    document.getElementById('pdfResult').style.display       = 'none';
+    document.getElementById('pdfModalFooter').style.display  = 'flex';
+    document.getElementById('pdfUploadBtn').disabled         = true;
+    document.getElementById('pdfDropZone').style.display     = 'flex';
+    document.getElementById('pdfDropZone').classList.remove('drag-over');
+    document.getElementById('pdfProgressBar').style.width    = '0%';
+    document.getElementById('pdfProgressPct').textContent    = '0%';
+}
+
+function clearPdfSelection() {
+    _selectedPdfFile = null;
+    document.getElementById('pdfFileInput').value = '';
+    document.getElementById('pdfFilePreview').style.display = 'none';
+    document.getElementById('pdfUploadBtn').disabled = true;
+}
+
+function pdfFileSelected(e) {
+    const file = e.target.files[0];
+    if (file) applyPdfFile(file);
+}
+
+function pdfDragOver(e) {
+    e.preventDefault();
+    document.getElementById('pdfDropZone').classList.add('drag-over');
+}
+
+function pdfDragLeave(e) {
+    document.getElementById('pdfDropZone').classList.remove('drag-over');
+}
+
+function pdfDrop(e) {
+    e.preventDefault();
+    document.getElementById('pdfDropZone').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) applyPdfFile(file);
+}
+
+function applyPdfFile(file) {
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+        showToast('⚠️ Only PDF files are accepted', 'error', 3000);
+        return;
+    }
+    _selectedPdfFile = file;
+    document.getElementById('pdfFileName').textContent = file.name;
+    document.getElementById('pdfFileSize').textContent = formatBytes(file.size);
+    document.getElementById('pdfFilePreview').style.display = 'block';
+    document.getElementById('pdfUploadBtn').disabled = false;
+}
+
+function formatBytes(bytes) {
+    if (bytes < 1024)        return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function startPdfUpload() {
+    if (!_selectedPdfFile) return;
+
+    // Switch to progress view
+    document.getElementById('pdfDropZone').style.display    = 'none';
+    document.getElementById('pdfFilePreview').style.display = 'none';
+    document.getElementById('pdfProgress').style.display    = 'block';
+    document.getElementById('pdfModalFooter').style.display = 'none';
+    document.getElementById('pdfResult').style.display      = 'none';
+
+    const bar   = document.getElementById('pdfProgressBar');
+    const pct   = document.getElementById('pdfProgressPct');
+    const label = document.getElementById('pdfProgressLabel');
+    const sub   = document.getElementById('pdfProgressSub');
+
+    // Animate upload progress with XHR
+    const formData = new FormData();
+    formData.append('file', _selectedPdfFile);
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+            const p = Math.round((e.loaded / e.total) * 40); // upload = 0-40%
+            bar.style.width = p + '%';
+            pct.textContent = p + '%';
+        }
+    });
+
+    // Simulate indexing progress (40%-95%) with interval
+    let fakeP = 40;
+    let fakeInterval;
+
+    xhr.upload.addEventListener('load', () => {
+        label.textContent = 'Indexing into vector database...';
+        sub.textContent   = 'Embedding chunks — this may take a minute...';
+        fakeInterval = setInterval(() => {
+            fakeP = Math.min(fakeP + Math.random() * 3, 92);
+            bar.style.width = fakeP + '%';
+            pct.textContent = Math.round(fakeP) + '%';
+        }, 600);
+    });
+
+    xhr.addEventListener('load', () => {
+        clearInterval(fakeInterval);
+        bar.style.width = '100%';
+        pct.textContent = '100%';
+
+        const resultEl = document.getElementById('pdfResult');
+        document.getElementById('pdfProgress').style.display = 'none';
+        resultEl.style.display = 'block';
+
+        try {
+            const data = JSON.parse(xhr.responseText);
+            if (xhr.status === 200) {
+                const isAlready = data.status === 'already_exists';
+                resultEl.innerHTML = `
+                    <div class="pdf-result-icon ${isAlready ? 'warn' : 'success'}">
+                        ${isAlready
+                            ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+                            : '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+                        }
+                    </div>
+                    <p class="pdf-result-title">${isAlready ? 'Already Indexed' : 'Successfully Indexed!'}</p>
+                    <p class="pdf-result-msg">${data.message}</p>
+                    ${data.chunks ? `<div class="pdf-result-stats">
+                        <span>📄 ${data.chunks} chunks stored</span>
+                        <span>⏱ ${data.total_time}s total</span>
+                        <span>🔗 ${data.embed_time}s embedding</span>
+                    </div>` : ''}
+                `;
+                showToast(isAlready ? `ℹ️ Already indexed` : `✅ ${data.filename} indexed!`, isAlready ? 'info' : 'success', 4000);
+            } else {
+                resultEl.innerHTML = `
+                    <div class="pdf-result-icon error">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    </div>
+                    <p class="pdf-result-title">Upload Failed</p>
+                    <p class="pdf-result-msg">${data.error || 'Unknown error occurred.'}</p>
+                `;
+                showToast('❌ Upload failed: ' + (data.error || 'Unknown'), 'error', 4000);
+            }
+        } catch {
+            resultEl.innerHTML = '<p class="pdf-result-msg">Unexpected server response.</p>';
+        }
+
+        // Show a close button
+        document.getElementById('pdfModalFooter').innerHTML =
+            '<button class="pdf-btn-primary" onclick="closeUploadModal()">Done</button>';
+        document.getElementById('pdfModalFooter').style.display = 'flex';
+    });
+
+    xhr.addEventListener('error', () => {
+        clearInterval(fakeInterval);
+        document.getElementById('pdfProgress').style.display = 'none';
+        const resultEl = document.getElementById('pdfResult');
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = `
+            <div class="pdf-result-icon error"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+            <p class="pdf-result-title">Network Error</p>
+            <p class="pdf-result-msg">Could not reach the server. Check your connection.</p>
+        `;
+        document.getElementById('pdfModalFooter').innerHTML =
+            '<button class="pdf-btn-primary" onclick="closeUploadModal()">Close</button>';
+        document.getElementById('pdfModalFooter').style.display = 'flex';
+        showToast('❌ Network error during upload', 'error', 4000);
+    });
+
+    xhr.open('POST', '/api/upload-pdf');
+    xhr.send(formData);
+}
+
 
 function scrollBottom() {
     chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
