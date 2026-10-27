@@ -1,19 +1,18 @@
 <div align="center">
 
-# 📚 DSA Book Assistant
+# 📚 DSA Assistant
 
-### *Retrieval-Augmented Generation Chat for Data Structures & Algorithms*
+### *Textbook-grounded AI tutor for Data Structures & Algorithms*
 
-[![Python](https://img.shields.io/badge/Python-3.11-3572A5?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.13-3572A5?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.x-000000?style=flat-square&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-336791?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
-[![Groq](https://img.shields.io/badge/LLM-Groq%20LLaMA3-f55036?style=flat-square)](https://groq.com)
-[![LangChain](https://img.shields.io/badge/RAG-LangChain-1C3C3C?style=flat-square)](https://langchain.com)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-336791?style=flat-square&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
+[![Groq](https://img.shields.io/badge/LLM-Groq-f55036?style=flat-square)](https://groq.com)
+[![ONNX Runtime](https://img.shields.io/badge/Embeddings-ONNX%20Runtime-005CED?style=flat-square)](https://onnxruntime.ai)
 
-**Ask any question about Data Structures and Algorithms — get accurate answers directly from your indexed textbooks, powered by RAG + LLaMA3.**
+**Ask any Data Structures & Algorithms question and get a clear, step-by-step answer drawn from your own indexed textbooks, with the sources it used.**
 
-[Features](#-features) · [Architecture](#-architecture) · [Quick Start](#-quick-start) · [API Reference](#-api-reference) · [Deployment](#-deployment)
+[Features](#-features) · [Architecture](#%EF%B8%8F-architecture) · [Quick Start](#-quick-start) · [Deployment](#-deployment-render) · [API](#-api-reference) · [Configuration](#-configuration-reference)
 
 </div>
 
@@ -23,151 +22,106 @@
 
 | Feature | Description |
 |---|---|
-| 🤖 **RAG Pipeline** | Retrieval-Augmented Generation using pgvector similarity search + LLaMA3 |
-| 📖 **PDF Textbook Indexing** | Upload any DSA textbook PDF and index it in one click |
-| 💬 **Multi-Session Chat** | Persistent conversation history with named sessions |
-| 🔐 **User Authentication** | Secure signup/login with session management |
-| 📧 **OTP Password Reset** | Email-based one-time password recovery flow |
-| 🎨 **Modern Dark UI** | Claude/ChatGPT-style interface with dark red premium theme |
-| 🌓 **Light/Dark Mode** | Persisted theme preference via localStorage |
-| 📊 **Code Block Rendering** | Line-numbered code blocks with language detection and copy button |
-| 🔍 **Spell Correction** | Automatic query spell-check before search |
-| 📱 **Responsive Design** | Collapsible sidebar, mobile-friendly layout |
-| 🚀 **Production Ready** | Gunicorn + Heroku/Render deployment configuration |
+| 🤖 **RAG answers** | pgvector similarity search over your PDFs + a Groq-hosted LLM. Answers use only the retrieved passages and end with a **Sources** list. |
+| 🧭 **Structured, step-by-step answers** | Direct answer first, then key ideas, numbered steps, examples, code, complexity tables and takeaways, only where the textbooks support them. |
+| 📖 **Bring your own textbooks** | Upload a PDF from the chat (or drop files in `data/pdf/`) and it is chunked, embedded and indexed. Unchanged files are skipped. |
+| ⚡ **Streaming answer animation** | Answers type out live; list items, table rows and code lines appear in sequence. Click to show everything at once. |
+| 🔄 **Background chats** | Ask a question, switch to another chat, and it keeps running. You get an **Answer ready → Open** notification when it finishes. |
+| 💬 **Chat history** | Saved per user; search (Ctrl K), rename, delete, grouped by date. |
+| 🎨 **5 themes** | Daylight, Midnight, Aurora, Sunset and Ocean, plus an animated graph background with BFS-traversal effects and a reading animation while the AI searches. |
+| 🧑‍💻 **Readable code** | Syntax colours, line numbers, language labels and one-click copy. |
+| 🔐 **Accounts** | Sign up / sign in, salted password hashing, email OTP password reset with rate limits. |
+| 📧 **Emails that work on Render** | Welcome + OTP emails via Brevo's HTTPS API (Render's free plan blocks SMTP), with Gmail SMTP as the local fallback. |
+| 📱 **Responsive** | Collapsible icon-rail sidebar on desktop, slide-out drawer on mobile. |
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Browser (Client)                  │
-│  Landing · Login · Signup · Chat UI (Vanilla JS)    │
-└───────────────────────┬─────────────────────────────┘
-                        │ HTTP / REST API
-┌───────────────────────▼─────────────────────────────┐
-│               Flask Application (app.py)             │
-│                                                      │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ │
-│  │ auth_    │ │  chat.py │ │ingest.py │ │session │ │
-│  │ routes   │ │  /api/ask│ │/api/ingest│ │  s.py  │ │
-│  └──────────┘ └────┬─────┘ └────┬─────┘ └────────┘ │
-└───────────────────┬┴────────────┴────────────────────┘
-                    │
-         ┌──────────▼──────────┐
-         │    RAG Pipeline      │
-         │  rag/rag_pipeline.py │
-         │                      │
-         │  1. Spell Correct    │
-         │  2. Similarity Search│
-         │  3. LLM Generation   │
-         └──────┬───────┬───────┘
-                │       │
-    ┌───────────▼─┐ ┌───▼────────────────┐
-    │  pgvector   │ │   Groq API          │
-    │ (PostgreSQL)│ │   LLaMA3-8b-8192   │
-    │             │ │   via LangChain     │
-    │ embeddings  │ └────────────────────┘
-    │ documents   │
-    │ users       │
-    │ sessions    │
-    │ messages    │
-    └─────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ Browser — vanilla HTML/CSS/JS                                 │
+│ landing · login · signup · chat (static/*.js, static/*.css)  │
+└──────────────────────────────┬───────────────────────────────┘
+                               │ JSON over HTTP (session cookie)
+┌──────────────────────────────▼───────────────────────────────┐
+│ Flask app (app.py) — blueprints in routes/                    │
+│ auth_routes · chat (/api/ask) · ingest · sessions · ui        │
+└───────────────┬───────────────────────────────┬──────────────┘
+                │                               │
+     ┌──────────▼──────────┐          ┌─────────▼──────────┐
+     │ RAG pipeline (rag/) │          │ PDF ingestion      │
+     │ 1. spell-correct    │          │ load → split →     │
+     │ 2. similarity search│          │ embed → INSERT     │
+     │ 3. LLM answer       │          └─────────┬──────────┘
+     └────┬───────────┬────┘                    │
+          │           │                         │
+┌─────────▼──────┐ ┌──▼──────────────┐ ┌────────▼───────────────┐
+│ Groq API       │ │ ONNX Runtime    │ │ PostgreSQL + pgvector  │
+│ (LangChain-    │ │ all-MiniLM-L6-v2│ │ documents · users ·    │
+│  Groq)         │ │ 384-dim vectors │ │ sessions · messages ·  │
+└────────────────┘ └─────────────────┘ │ reset_tokens           │
+                                       └────────────────────────┘
 ```
 
-### RAG Flow
+### How a question is answered (`/api/ask`)
 
-```
-User Question
-      │
-      ▼
-Spell Correction (pyspellchecker)
-      │
-      ▼
-Generate Query Embedding (all-MiniLM-L6-v2)
-      │
-      ▼
-Vector Similarity Search (pgvector cosine)
-      │
-      ▼
-Retrieved Context Chunks (top-k passages)
-      │
-      ▼
-LLM Prompt Construction (LangChain)
-      │
-      ▼
-Groq LLaMA3 Inference
-      │
-      ▼
-Formatted Answer (Markdown → Rendered HTML)
-```
+1. **Spell-correct** the query for search (DSA terms like *bfs*, *heapify*, *memoization* are protected). The original question is what the LLM sees.
+2. **Embed** it with `all-MiniLM-L6-v2` on ONNX Runtime (no PyTorch, about 240 MB of RAM).
+3. **Search** the top 7 chunks by L2 distance in pgvector and keep those within **0.95** (see `db/retriever.py`). If nothing is close enough, the app replies *"I could not find information about this in the indexed textbooks."*
+4. **Prompt** the LLM (`rag/prompt.py`) with the labelled passages; it must answer only from them and list its sources.
+5. **Save** the question and answer to the chat session and return `{question, answer, session_id}`.
+
+### How PDFs are indexed (`/api/ingest`, `/api/upload-pdf`)
+
+PyMuPDF loads each page → 500-character chunks with 100 overlap → each chunk is embedded → stored with `source_file` and an MD5 `file_hash`, so files already indexed are skipped next time.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-Dsa_RAG/
-│
-├── app.py                  # Flask app factory — registers all blueprints
-├── auth.py                 # API key middleware & session helpers
-├── config.py               # Environment config (DB, Groq, embeddings)
-├── database.py             # DB init — creates all tables on startup
+DSA-Assistant/
+├── app.py                  # Flask app — config, blueprints, JSON error handlers
+├── auth.py                 # login_required, current user, json_body() helper
+├── config.py               # Environment config (DB, Groq, PDF folder)
+├── database.py             # Creates users / sessions / messages / reset_tokens on startup
 ├── mailer.py               # Welcome + OTP emails (Brevo HTTPS API, Gmail SMTP fallback)
-├── main.py                 # Entry point shim
+├── main.py                 # Unused placeholder
 │
-├── routes/                 # Flask Blueprints
-│   ├── auth_routes.py      # /signup /login /logout /api/me /forgot-password
-│   ├── chat.py             # /api/ask  — core RAG endpoint
-│   ├── ingest.py           # /api/ingest — PDF indexing trigger
+├── routes/                 # Flask blueprints
+│   ├── auth_routes.py      # /signup /login /logout /api/me + password-reset API
+│   ├── chat.py             # /api/ask — core RAG endpoint
+│   ├── ingest.py           # /api/ingest, /api/upload-pdf
 │   ├── sessions.py         # /api/sessions — list / load / rename / delete
-│   └── ui.py               # / /chat — serve HTML pages
+│   └── ui.py               # / and /chat pages
 │
-├── rag/                    # RAG pipeline
-│   ├── rag_pipeline.py     # Orchestrates: spell → search → LLM
-│   ├── llm_runner.py       # Calls Groq LLaMA3 with prompt
-│   ├── prompt.py           # System prompt template for DSA assistant
-│   └── spell_correct.py    # Query spell correction
+├── rag/
+│   ├── rag_pipeline.py     # spell-correct → search → LLM
+│   ├── llm_runner.py       # Calls the LLM, keeps clean refusals
+│   ├── prompt.py           # Answer prompt (grounding, structure, formatting rules)
+│   └── spell_correct.py    # Query spell correction with a DSA vocabulary
 │
-├── llm/
-│   └── groq_llm.py         # Groq LLM client (LangChain-Groq)
+├── llm/groq_llm.py         # Groq chat model (LangChain-Groq)
+├── embeddings/embedder.py  # all-MiniLM-L6-v2 on ONNX Runtime
 │
-├── embeddings/
-│   └── embedder.py         # HuggingFace sentence-transformer singleton
+├── loaders/                # PDF loading, hashing, de-duplication, chunking
+├── db/                     # connection, schema, ingester, retriever, user_store, tracker
 │
-├── loaders/                # PDF loading & chunking
-│   ├── pdf_loader.py       # Load PDFs from directory, split into chunks
-│   ├── loader.py           # LangChain document loader wrapper
-│   ├── splitter.py         # Text splitter (chunk_size, overlap)
-│   ├── filter.py           # Duplicate / noise filter
-│   └── hasher.py           # MD5 file hash for dedup tracking
+├── templates/              # landing.html · login.html · signup.html · index.html (chat)
+├── static/
+│   ├── base.css            # Design system: 5 themes, components, animated background styles
+│   ├── style.css           # Chat app
+│   ├── auth.css            # Sign in / sign up / reset
+│   ├── landing.css         # Landing page
+│   ├── theme.js            # Theme picker + persistence
+│   ├── bg.js               # Animated graph background, glyphs, cursor glow
+│   └── script.js           # Chat logic, markdown renderer, streaming, background chats
 │
-├── db/                     # Database layer
-│   ├── connection.py       # psycopg2 connection factory
-│   ├── schema.py           # Ensure pgvector columns exist
-│   ├── ingester.py         # Batch embed + insert chunks to PostgreSQL
-│   ├── retriever.py        # Cosine similarity retrieval
-│   ├── vector_store.py     # Facade: store_documents + similarity_search
-│   ├── user_store.py       # CRUD for users + OTP management
-│   ├── tracker.py          # Track which PDF files are already ingested
-│   └── cleaner.py          # Clean / normalize extracted text
-│
-├── templates/              # Jinja2 HTML templates
-│   ├── landing.html        # Public landing page
-│   ├── login.html          # Login + forgot-password flow
-│   ├── signup.html         # Registration page
-│   └── index.html          # Main chat application
-│
-├── static/                 # Frontend assets
-│   ├── style.css           # Global design system (dark red theme)
-│   ├── script.js           # Chat logic, markdown renderer, session management
-│   └── theme.js            # Light/dark mode persistence
-│
-├── data/                   # PDF storage directory (gitignored)
-├── Procfile                # Gunicorn production server config
-├── runtime.txt             # Python 3.11
-├── requirements.txt        # Python dependencies
-└── .env                    # Environment variables (not committed)
+├── data/pdf/               # Textbook PDFs to index (committed)
+├── Procfile                # gunicorn start command
+├── requirements.txt        # Python dependencies (used by pip / Render)
+└── .env                    # Your secrets (git-ignored, never commit it)
 ```
 
 ---
@@ -176,196 +130,173 @@ Dsa_RAG/
 
 ### Prerequisites
 
-- Python 3.11+
-- PostgreSQL 14+ with `pgvector` extension enabled
-- [Groq API key](https://console.groq.com) (free tier available)
+- Python 3.11+ (3.13 recommended; see `.python-version`)
+- PostgreSQL with the [`pgvector`](https://github.com/pgvector/pgvector) extension (for example a free [Neon](https://neon.tech) database)
+- A [Groq API key](https://console.groq.com)
 
-### 1. Clone & Install
+### 1. Clone and install
 
 ```bash
-git clone https://github.com/yourusername/Dsa_RAG.git
-cd Dsa_RAG
-
+git clone https://github.com/Amrit114/DSA-Assistant.git
+cd DSA-Assistant
 python -m venv .venv
+```
+
+```bash
 # Windows
 .venv\Scripts\activate
-# macOS/Linux
+# macOS / Linux
 source .venv/bin/activate
+```
 
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
-
-Create a `.env` file in the project root:
+### 2. Create `.env` in the project root
 
 ```env
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/dsa_rag
-# OR individual fields:
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=dsa_rag
-DB_USER=postgres
-DB_PASSWORD=yourpassword
+# Database (connections use sslmode=require)
+DATABASE_URL=postgresql://user:password@host/dbname
 
-# Groq LLM
+# Groq LLM — set the model explicitly (the code's default, llama3-8b-8192, has been retired by Groq)
 GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
-GROQ_MODEL=llama3-8b-8192
-
-# Embeddings
-EMBEDDING_MODEL=all-MiniLM-L6-v2
+GROQ_MODEL=openai/gpt-oss-120b
 
 # App
-SECRET_KEY=your-very-secret-key-here
-PDF_DIR=data
+SECRET_KEY=generate-one-with-the-command-below
+PDF_DIR=data/pdf
 
-# Email (welcome + OTP password reset)
-# Production / Render: Render's free plan blocks outbound SMTP, so use Brevo's HTTPS API.
+# Email — production (Render's free plan blocks SMTP)
 BREVO_API_KEY=xkeysib-xxxxxxxx
-MAIL_FROM=your@gmail.com          # must be a verified sender in Brevo
-APP_URL=https://your-app.onrender.com
-# Local fallback (used when BREVO_API_KEY is not set)
-SMTP_EMAIL=your@gmail.com
+MAIL_FROM=you@example.com          # must be a verified sender in Brevo
+APP_URL=http://localhost:5000      # your public URL in production
+
+# Email — local fallback (used when BREVO_API_KEY is not set)
+SMTP_EMAIL=you@gmail.com
 SMTP_PASSWORD=your-gmail-app-password
 ```
 
-### 3. Set Up PostgreSQL
+Generate a `SECRET_KEY` (the app refuses to start without one):
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+### 3. Prepare the database (once)
+
+The app creates the user and chat tables itself. Create the extension and the vector table yourself:
 
 ```sql
--- In psql or pgAdmin:
-CREATE DATABASE dsa_rag;
-\c dsa_rag
 CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS documents (
+    id          SERIAL PRIMARY KEY,
+    content     TEXT,
+    embedding   vector(384),
+    source_file TEXT,
+    file_hash   TEXT
+);
 ```
 
-### 4. Add Your PDFs
-
-Place your DSA textbook PDF files inside the `data/` directory:
-
-```
-data/
-├── introduction_to_algorithms.pdf
-├── data_structures_and_algorithms.pdf
-└── cracking_the_coding_interview.pdf
-```
-
-### 5. Run the Application
+### 4. Run
 
 ```bash
 python app.py
 ```
 
-The app starts at **http://localhost:5000**
+Open **http://localhost:5000**, create an account, then click **Index PDFs** in the sidebar to index everything in `data/pdf/`, or use **Upload textbook** to add a single PDF. The first question downloads the embedding model (~90 MB) into `/tmp/hf_cache`.
 
-### 6. Index Your PDFs
+> Flask caches templates in this mode. Restart the server after editing files in `templates/`.
 
-1. Log in to the application
-2. Click **"Index PDFs"** in the sidebar
-3. Wait for indexing to complete (progress shown in terminal)
-4. Start chatting! 🎉
+---
+
+## 🚀 Deployment (Render)
+
+1. **New → Web Service**, connect the GitHub repo.
+2. **Build command:** `pip install -r requirements.txt`
+3. **Start command:** `gunicorn app:app --bind 0.0.0.0:$PORT --timeout 300 --workers 1` (same as `Procfile`)
+4. **Environment:** add every variable from the `.env` above. `SECRET_KEY`, `DATABASE_URL`, `GROQ_API_KEY` and `GROQ_MODEL` are required; set `APP_URL` to your Render URL.
+5. **Email:** Render's free plan blocks outbound SMTP (ports 25/465/587), so set `BREVO_API_KEY` and `MAIL_FROM`:
+   create a free account at [brevo.com](https://www.brevo.com) → verify your sender address → **SMTP & API → API keys**.
+   Logs show `[mailer] … sent via Brevo` or the exact error.
+
+**Memory:** with ONNX Runtime the app uses about 240 MB after the first answer, which fits Render's 512 MB free instance.
+**Storage:** Render's disk is temporary. Uploaded PDFs are lost on restart, but their chunks stay in PostgreSQL, so answers keep working.
 
 ---
 
 ## 🔌 API Reference
 
-All `/api/*` endpoints except signup, login and password reset require a logged-in session (the Flask session cookie set by `/api/login`).
+All `/api/*` routes except signup, login and password reset need the session cookie set by `/api/login`.
+Errors are returned as JSON: `{"error": "…"}`.
 
 ### Authentication
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/signup` | Register a new user |
-| `POST` | `/api/login` | Login and get session |
-| `GET`  | `/api/me` | Get current user info |
-| `GET`  | `/logout` | Clear session |
-| `POST` | `/api/forgot-password` | Send OTP to email |
-| `POST` | `/api/verify-otp` | Verify OTP code |
-| `POST` | `/api/reset-password` | Set new password |
+| Method | Endpoint | Body | Description |
+|---|---|---|---|
+| `POST` | `/api/signup` | `username, email, password` | Create an account and sign in |
+| `POST` | `/api/login` | `email, password` | Sign in |
+| `GET`  | `/api/me` | — | Current user (401 if signed out or the account no longer exists) |
+| `GET`  | `/logout` | — | Sign out |
+| `POST` | `/api/forgot-password` | `email` | Email a 6-digit code (max 3 per 10 minutes) |
+| `POST` | `/api/verify-otp` | `email, otp` | Check a code (5 wrong tries burn it) |
+| `POST` | `/api/reset-password` | `email, otp, new_password` | Set a new password |
 
 ### Chat
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/ask` | Send a question, get RAG answer |
+|---|---|---|
+| `POST` | `/api/ask` | Ask a question. Omit `session_id` (or send `null`) to start a new chat. |
 
-**Request:**
 ```json
-{
-  "question": "Explain binary search trees",
-  "session_id": "optional-existing-session-uuid"
-}
+{ "question": "Explain binary search trees", "session_id": "optional-existing-session-uuid" }
 ```
 
-**Response:**
 ```json
-{
-  "question": "Explain binary search trees",
-  "answer": "## Binary Search Trees\n\nA **BST** is...",
-  "session_id": "550e8400-e29b-41d4-a716-446655440000"
-}
+{ "question": "Explain binary search trees", "answer": "## Binary Search Tree\n…", "session_id": "550e8400-…" }
 ```
+
+Returns `404` if `session_id` belongs to another user.
 
 ### Sessions
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`    | `/api/sessions` | List all user sessions |
-| `GET`    | `/api/sessions/:id` | Load a session with messages |
-| `PATCH`  | `/api/sessions/:id/title` | Rename a session |
-| `DELETE` | `/api/sessions/:id` | Delete a session |
-| `DELETE` | `/api/sessions` | Delete all sessions |
+|---|---|---|
+| `GET`    | `/api/sessions` | List your chats |
+| `GET`    | `/api/sessions/<id>` | A chat with its messages |
+| `PATCH`  | `/api/sessions/<id>/title` | Rename (`{"title": "…"}`) |
+| `DELETE` | `/api/sessions/<id>` | Delete one chat |
+| `DELETE` | `/api/sessions` | Delete all your chats |
 
-### Ingestion
+### Indexing
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/ingest` | Index all PDFs in the `data/` directory |
-
-**Response:**
-```json
-{
-  "indexed": {
-    "files": ["algorithms.pdf"],
-    "message": "1 file(s) successfully indexed."
-  },
-  "timing": {
-    "total_chunks": 1240,
-    "stored": 1238,
-    "embed_time_sec": 45.2,
-    "total_time_sec": 67.8
-  },
-  "skipped": {
-    "files": ["already_ingested.pdf"],
-    "message": "1 file(s) already exist in the database."
-  }
-}
-```
+|---|---|---|
+| `POST` | `/api/ingest` | Index all PDFs in `PDF_DIR` (already-indexed files are skipped) |
+| `POST` | `/api/upload-pdf` | Upload one PDF (`multipart/form-data`, field `file`) and index it |
 
 ---
 
 ## 🗄️ Database Schema
 
 ```sql
--- Users
 CREATE TABLE users (
     id         SERIAL PRIMARY KEY,
     username   TEXT UNIQUE NOT NULL,
     email      TEXT UNIQUE NOT NULL,
-    password   TEXT NOT NULL,          -- werkzeug salted hash (scrypt)
+    password   TEXT NOT NULL,          -- werkzeug salted hash (old SHA-256 hashes upgrade on login)
     created_at TEXT
 );
 
--- Chat Sessions
 CREATE TABLE sessions (
     id         TEXT PRIMARY KEY,       -- UUID
     user_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    title      TEXT,                   -- Auto-generated from first question
+    title      TEXT,                   -- first question
     created_at TEXT,
     updated_at TEXT
 );
 
--- Chat Messages
 CREATE TABLE messages (
     id         SERIAL PRIMARY KEY,
     session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
@@ -374,100 +305,34 @@ CREATE TABLE messages (
     created_at TEXT
 );
 
--- OTP Password Reset
 CREATE TABLE reset_tokens (
     id         SERIAL PRIMARY KEY,
     email      TEXT,
     otp        TEXT,
     expires_at TEXT,
-    used       INTEGER DEFAULT 0
+    used       INTEGER DEFAULT 0,
+    attempts   INTEGER DEFAULT 0       -- wrong guesses; the code is burned after 5
 );
 
--- Vector Documents (pgvector)
-CREATE TABLE documents (
+CREATE TABLE documents (               -- create manually (see Quick Start)
     id          SERIAL PRIMARY KEY,
     content     TEXT,
-    embedding   vector(384),           -- all-MiniLM-L6-v2 dimension
+    embedding   vector(384),           -- all-MiniLM-L6-v2
     source_file TEXT,
-    file_hash   TEXT                   -- MD5 for deduplication
+    file_hash   TEXT                   -- MD5, for skipping already-indexed files
 );
 ```
 
 ---
 
-## 🎨 Frontend Overview
+## 🔐 Security
 
-The frontend is built with **pure Vanilla HTML, CSS, and JavaScript** — no frameworks.
-
-### Design System
-
-- **Theme**: Dark red (`#e53935`) on deep black (`#0a0a0a`)
-- **Fonts**: `Bebas Neue` (headings), `Outfit` (body), `JetBrains Mono` (code)
-- **Color mode**: Persisted via `localStorage` with CSS `[data-theme]` attribute
-
-### Key JavaScript Features (`static/script.js`)
-
-| Function | Purpose |
-|---|---|
-| `formatMessage(text)` | Markdown → HTML renderer with code block extraction |
-| `renderMessage(text, role)` | Appends a new chat bubble to the container |
-| `askQuestion()` | Sends question to `/api/ask`, shows loading state |
-| `copyCode(id)` | Copies code block text to clipboard (excludes line numbers) |
-| `toggleSidebarCollapse()` | Collapses/expands sidebar with localStorage persistence |
-| `loadSession(id)` | Fetches and renders a full past conversation |
-| `ingestPDFs()` | Triggers PDF indexing via `/api/ingest` |
-
-### Markdown Rendering Pipeline
-
-The `formatMessage()` function processes AI responses through this pipeline:
-
-```
-1. Extract fenced code blocks → safe placeholders (%%CB0%%, %%CB1%%, ...)
-2. Process blockquotes, headings (h1–h4), horizontal rules
-3. Process bold, italic, inline code
-4. Convert ordered/unordered lists to HTML
-5. Paragraph-wrap remaining plain text
-6. Inject rendered code blocks (line-numbered, language-colored)
-```
-
-> **Note:** Code blocks are extracted **first** before any other processing,
-> ensuring code content is never parsed as markdown and always stays intact.
-
----
-
-## 🚀 Deployment
-
-### Heroku / Render
-
-The project includes a `Procfile` ready for Heroku/Render:
-
-```
-gunicorn app:app --bind 0.0.0.0:$PORT --timeout 300 --workers 1
-```
-
-**Steps:**
-
-```bash
-# Heroku
-heroku create your-app-name
-heroku addons:create heroku-postgresql:mini
-heroku config:set GROQ_API_KEY=gsk_xxx SECRET_KEY=your-secret
-git push heroku main
-
-# Render — connect GitHub repo, set environment variables in dashboard
-```
-
-### Docker (Self-Hosted)
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 5000
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000", "--timeout", "300"]
-```
+- Passwords are stored as salted werkzeug hashes; accounts with old SHA-256 hashes are upgraded on their next login.
+- `SECRET_KEY` is required; the session cookie is `HttpOnly` and `SameSite=Lax`.
+- Reset codes are generated with `secrets`, expire after 10 minutes, allow 5 wrong guesses and are limited to 3 per email per 10 minutes.
+- Answer text is HTML-escaped before markdown rendering, so content from PDFs or the model can't inject scripts.
+- Users' names in emails are escaped; the welcome email never contains the password.
+- Never commit `.env`. It is git-ignored.
 
 ---
 
@@ -475,107 +340,46 @@ CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000", "--timeout", "300"]
 
 | Variable | Default | Description |
 |---|---|---|
-| `DATABASE_URL` | — | Full PostgreSQL URL (overrides individual fields) |
-| `DB_HOST` | — | PostgreSQL host |
-| `DB_PORT` | `5432` | PostgreSQL port |
-| `DB_NAME` | — | Database name |
-| `DB_USER` | — | Database username |
-| `DB_PASSWORD` | — | Database password |
+| `DATABASE_URL` | — | PostgreSQL URL (or use `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`) |
 | `GROQ_API_KEY` | — | **Required.** Groq API key |
-| `GROQ_MODEL` | `llama3-8b-8192` | LLM model ID |
-| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | HuggingFace embedding model |
-| `PDF_DIR` | `data` | Directory containing PDF textbooks |
-| `SECRET_KEY` | — | **Required.** Flask session secret; the app refuses to start without it |
-| `BREVO_API_KEY` | — | Brevo API key; when set, emails go over HTTPS (needed on Render's free plan) |
+| `GROQ_MODEL` | `llama3-8b-8192` | Groq model ID. **Set this**; the default has been retired by Groq. |
+| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Must have an ONNX export on Hugging Face and match the 384-dim `documents` table |
+| `PDF_DIR` | `pdfs` | Folder of PDFs to index; set it to `data/pdf` for the bundled books |
+| `SECRET_KEY` | — | **Required.** Flask session secret |
+| `BREVO_API_KEY` | — | Send email over Brevo's HTTPS API (needed on Render's free plan) |
 | `MAIL_FROM` | `SMTP_EMAIL` | Sender address; must be verified in Brevo |
 | `APP_URL` | — | Public URL, used for the sign-in link in the welcome email |
 | `SMTP_EMAIL` | — | Gmail address for the local SMTP fallback |
-| `SMTP_PASSWORD` | — | Gmail app password for the local SMTP fallback |
+| `SMTP_PASSWORD` | — | Gmail [app password](https://myaccount.google.com/apppasswords) for the local fallback |
+| `PORT` | `5000` | Port for `python app.py` (Render sets it automatically) |
 
 ---
 
-## 🧠 How the RAG Pipeline Works
+## 📋 Roadmap
 
-### 1. PDF Ingestion (`/api/ingest`)
-
-```
-PDF Files in data/
-       │
-       ▼ PyMuPDF / PyPDF loader
-Extract raw text + metadata (page numbers, source file)
-       │
-       ▼ LangChain TextSplitter
-Split into overlapping chunks (chunk_size, overlap)
-       │
-       ▼ Filter & Clean
-Remove noise, normalize whitespace, deduplicate by MD5 hash
-       │
-       ▼ HuggingFace all-MiniLM-L6-v2
-Generate 384-dim embedding vector for each chunk
-       │
-       ▼ pgvector INSERT
-Store (content, embedding, source_file, file_hash) in PostgreSQL
-```
-
-### 2. Query & Answer (`/api/ask`)
-
-```
-User Question
-       │
-       ▼ pyspellchecker
-Correct spelling errors in query
-       │
-       ▼ HuggingFace embedding
-Generate 384-dim query vector
-       │
-       ▼ pgvector cosine similarity
-Retrieve top-k most relevant chunks from documents table
-       │
-       ▼ LangChain prompt
-Inject chunks as context into DSA system prompt
-       │
-       ▼ Groq API (LLaMA3-8b-8192)
-Generate markdown-formatted answer
-       │
-       ▼ Save to PostgreSQL
-Persist question + answer in sessions/messages tables
-       │
-       ▼ Return JSON
-{answer, session_id, question}
-```
+- [x] Syntax-highlighted, line-numbered code blocks
+- [x] Streaming answer animation and background chats
+- [x] Multiple themes
+- [ ] True server-side streaming (SSE) from the LLM
+- [ ] Per-user PDF collections
+- [ ] Export a conversation as PDF / Markdown
+- [ ] Rate limiting per user
+- [ ] Automated tests and a Docker Compose setup with PostgreSQL
 
 ---
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
----
-
-## 📋 Roadmap
-
-- [ ] Streaming LLM responses (SSE)
-- [ ] Multiple PDF collection support per user
-- [ ] Syntax highlighting with highlight.js
-- [ ] Export conversation as PDF/Markdown
-- [ ] Admin panel for user management
-- [ ] Rate limiting per user
-- [ ] Docker Compose setup with PostgreSQL
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+2. Create a branch: `git checkout -b feature/my-change`
+3. Commit: `git commit -m "Describe the change"`
+4. Push: `git push origin feature/my-change`
+5. Open a pull request
 
 ---
 
 <div align="center">
 
-Built with ❤️ by **Amrit** · Powered by [Groq](https://groq.com) + [LangChain](https://langchain.com) + [pgvector](https://github.com/pgvector/pgvector)
+Built by **Amrit** · Powered by [Groq](https://groq.com), [LangChain](https://langchain.com), [pgvector](https://github.com/pgvector/pgvector) and [ONNX Runtime](https://onnxruntime.ai)
 
 </div>
