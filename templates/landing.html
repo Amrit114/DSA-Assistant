@@ -3,929 +3,352 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>DSA Assistant — AI Powered DSA Tutor</title>
+    <title>DSA Assistant · Learn data structures and algorithms from real textbooks</title>
+    <meta name="description" content="Ask any data structures or algorithms question and get clear answers grounded in classic textbooks, with sources."/>
+    <meta property="og:title" content="DSA Assistant"/>
+    <meta property="og:description" content="Textbook-grounded answers to data structures and algorithms questions."/>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cg fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='16' cy='8' r='2.6'/%3E%3Ccircle cx='9' cy='23' r='2.6'/%3E%3Ccircle cx='23' cy='23' r='2.6'/%3E%3Cpath d='M14.6 10.3 10.4 20.7M17.4 10.3l4.2 10.4'/%3E%3C/g%3E%3C/svg%3E"/>
     <script src="/static/theme.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-    
-    <style>
-        /* ── 1. Color Themes ────────────────────────────── */
-        :root {
-            /* Midnight (Default Dark) */
-            --bg-dark: #09090b;
-            --surface-dark: #0f0f13;
-            --surface-hover: #17171d;
-            --surface-card: rgba(18, 18, 24, 0.75);
-            --border-dark: #1e1e28;
-            --border-subtle: #151520;
-            --text-primary: #f0f0f5;
-            --text-secondary: #9d9daa;
-            --text-muted: #5c5c6e;
-            --accent: #e53935;
-            --accent-hover: #ff1744;
-            --accent-subtle: rgba(229, 57, 53, 0.08);
-            --accent-glow: rgba(229, 57, 53, 0.2);
-            --nav-bg: rgba(9, 9, 11, 0.75);
-            --font-body: 'Outfit', sans-serif;
-            --font-display: 'Bebas Neue', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            --radius-sm: 6px;
-            --radius-md: 12px;
-            --radius-lg: 20px;
-            --radius-full: 9999px;
-            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-            --ease: cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        [data-theme="dawn"] {
-            --bg-dark: #faf5f0;
-            --surface-dark: #fefcf9;
-            --surface-hover: #f5efe8;
-            --surface-card: rgba(255, 252, 248, 0.85);
-            --border-dark: #e8ddd0;
-            --border-subtle: #f0e8de;
-            --text-primary: #2d1f11;
-            --text-secondary: #7a6650;
-            --text-muted: #b8a58e;
-            --accent: #d4530a;
-            --accent-hover: #e86315;
-            --accent-subtle: rgba(212, 83, 10, 0.08);
-            --accent-glow: rgba(212, 83, 10, 0.18);
-            --nav-bg: rgba(250, 245, 240, 0.82);
-        }
-
-        [data-theme="ocean"] {
-            --bg-dark: #060d16;
-            --surface-dark: #0a1220;
-            --surface-hover: #101d33;
-            --surface-card: rgba(12, 22, 38, 0.8);
-            --border-dark: #152540;
-            --border-subtle: #0f1d35;
-            --text-primary: #e2eaf5;
-            --text-secondary: #7b9bc0;
-            --text-muted: #4a6a90;
-            --accent: #0ea5e9;
-            --accent-hover: #38bdf8;
-            --accent-subtle: rgba(14, 165, 233, 0.08);
-            --accent-glow: rgba(14, 165, 233, 0.2);
-            --nav-bg: rgba(6, 13, 22, 0.8);
-        }
-
-        [data-theme="arctic"],
-        [data-theme="light"] {
-            --bg-dark: #f4f7fb;
-            --surface-dark: #ffffff;
-            --surface-hover: #f0f3f8;
-            --surface-card: rgba(255, 255, 255, 0.9);
-            --border-dark: #e2e8f0;
-            --border-subtle: #f1f5f9;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-muted: #94a3b8;
-            --accent: #6366f1;
-            --accent-hover: #818cf8;
-            --accent-subtle: rgba(99, 102, 241, 0.08);
-            --accent-glow: rgba(99, 102, 241, 0.18);
-            --nav-bg: rgba(244, 247, 251, 0.85);
-        }
-
-        /* ── 2. Reset & Global Styles ───────────────────── */
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: var(--font-body);
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-            transition: background 0.35s ease, color 0.35s ease;
-            position: relative;
-        }
-
-        ::selection {
-            background: var(--accent);
-            color: #ffffff;
-        }
-
-        /* ── 3. Navigation Bar (Glassmorphic) ──────────── */
-        nav {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 48px;
-            position: sticky;
-            top: 0;
-            background: var(--nav-bg);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            z-index: 1000;
-            border-bottom: 1px solid transparent;
-            transition: all 0.3s var(--ease);
-        }
-
-        nav.scrolled {
-            border-bottom-color: var(--border-dark);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
-
-        .nav-logo-icon {
-            width: 34px;
-            height: 34px;
-            background: linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 65%, #000) 100%);
-            border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffffff;
-            box-shadow: 0 2px 10px var(--accent-glow);
-            transition: transform 0.25s var(--spring);
-        }
-
-        .nav-brand:hover .nav-logo-icon {
-            transform: scale(1.08) rotate(4deg);
-        }
-
-        .nav-logo {
-            font-family: var(--font-display);
-            font-size: 26px;
-            letter-spacing: 1.5px;
-            color: var(--text-primary);
-            line-height: 1;
-        }
-
-        .nav-logo span {
-            color: var(--accent);
-            transition: color 0.3s;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-        }
-
-        /* Theme Selector in Nav */
-        .theme-selector-nav {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--surface-dark);
-            border: 1px solid var(--border-dark);
-            padding: 4px 8px;
-            border-radius: var(--radius-full);
-        }
-
-        .tdot {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            border: 2px solid transparent;
-            background: transparent;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s var(--spring);
-        }
-
-        .tdot span {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--dc);
-            display: block;
-            transition: transform 0.2s var(--spring);
-        }
-
-        .tdot:hover {
-            transform: scale(1.2);
-        }
-
-        .tdot.active {
-            border-color: var(--dc);
-            box-shadow: 0 0 10px var(--dc);
-        }
-
-        .theme-toggle-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 6px;
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            margin-left: 2px;
-        }
-
-        .theme-toggle-btn:hover {
-            color: var(--accent);
-            background: var(--surface-hover);
-        }
-
-        .btn-ghost {
-            padding: 8px 18px;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            border-radius: var(--radius-sm);
-            transition: all 0.2s var(--ease);
-            border: 1px solid transparent;
-        }
-
-        .btn-ghost:hover {
-            color: var(--text-primary);
-            background: var(--surface-hover);
-            border-color: var(--border-dark);
-        }
-
-        .btn-primary {
-            padding: 9px 20px;
-            background: var(--accent);
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 600;
-            text-decoration: none;
-            border-radius: var(--radius-sm);
-            box-shadow: 0 2px 12px var(--accent-glow);
-            transition: all 0.25s var(--spring);
-            position: relative;
-            overflow: hidden;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px var(--accent-glow);
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        /* ── 4. Hero Section ────────────────────────────── */
-        .hero {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 130px 24px 100px;
-            position: relative;
-            min-height: 92vh;
-            overflow: hidden;
-        }
-
-        /* Ambient background glow & grid */
-        .hero-mesh {
-            position: absolute;
-            inset: -20%;
-            background: 
-                radial-gradient(circle at 50% 25%, var(--accent-glow) 0%, transparent 50%),
-                radial-gradient(circle at 20% 60%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
-                radial-gradient(circle at 80% 55%, rgba(14, 165, 233, 0.07) 0%, transparent 45%);
-            filter: blur(50px);
-            pointer-events: none;
-            animation: heroMeshFloat 22s ease-in-out infinite alternate;
-        }
-
-        @keyframes heroMeshFloat {
-            0% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-30px) scale(1.05); }
-            100% { transform: translateY(20px) scale(0.98); }
-        }
-
-        .hero-grid {
-            position: absolute;
-            inset: 0;
-            background-image: 
-                linear-gradient(to right, var(--border-subtle) 1px, transparent 1px),
-                linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px);
-            background-size: 40px 40px;
-            opacity: 0.35;
-            mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 80%);
-            -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 80%);
-            pointer-events: none;
-        }
-
-        /* Floating Orbs */
-        .hero-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(60px);
-            pointer-events: none;
-            opacity: 0.2;
-            animation: orbDrift 20s ease-in-out infinite;
-        }
-
-        .hero-orb--1 {
-            width: 350px;
-            height: 350px;
-            background: var(--accent);
-            top: 15%;
-            left: 10%;
-            animation-duration: 24s;
-        }
-
-        .hero-orb--2 {
-            width: 320px;
-            height: 320px;
-            background: #6366f1;
-            top: 25%;
-            right: 12%;
-            animation-duration: 28s;
-            animation-delay: -6s;
-        }
-
-        @keyframes orbDrift {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(30px, -40px) scale(1.1); }
-        }
-
-        /* Hero Content */
-        .hero-content {
-            position: relative;
-            z-index: 2;
-            max-width: 860px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 7px 18px;
-            background: var(--surface-card);
-            border: 1px solid var(--border-dark);
-            border-radius: var(--radius-full);
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            font-family: var(--font-mono);
-            margin-bottom: 28px;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            animation: heroFadeDown 0.6s var(--ease) both;
-        }
-
-        .badge-dot {
-            width: 8px;
-            height: 8px;
-            background: #4ade80;
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(74, 222, 128, 0.6);
-            animation: dotGlowPulse 2s infinite ease-in-out;
-        }
-
-        @keyframes dotGlowPulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(0.85); opacity: 0.6; }
-        }
-
-        .hero h1 {
-            font-family: var(--font-display);
-            font-size: clamp(64px, 11vw, 132px);
-            line-height: 0.88;
-            letter-spacing: 2px;
-            margin-bottom: 24px;
-            background: linear-gradient(180deg, var(--text-primary) 0%, var(--text-secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: heroTitleIn 0.7s var(--spring) 0.1s both;
-        }
-
-        .hero h1 span {
-            background: linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 70%, #ff1744) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            font-size: 19px;
-            color: var(--text-secondary);
-            max-width: 620px;
-            line-height: 1.65;
-            margin-bottom: 40px;
-            animation: heroFadeUp 0.7s var(--ease) 0.25s both;
-        }
-
-        .hero-btns {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            animation: heroFadeUp 0.7s var(--ease) 0.4s both;
-        }
-
-        .btn-large {
-            padding: 14px 34px;
-            font-size: 16px;
-            border-radius: var(--radius-md);
-        }
-
-        @keyframes heroFadeDown {
-            from { opacity: 0; transform: translateY(-16px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes heroTitleIn {
-            from { opacity: 0; transform: translateY(24px) scale(0.96); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @keyframes heroFadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ── 5. Features Section ────────────────────────── */
-        .features {
-            padding: 120px 40px;
-            max-width: 1240px;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        .section-label {
-            text-align: center;
-            font-family: var(--font-mono);
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--accent);
-            text-transform: uppercase;
-            letter-spacing: 2.5px;
-            margin-bottom: 14px;
-        }
-
-        .section-title {
-            text-align: center;
-            font-family: var(--font-display);
-            font-size: clamp(38px, 6vw, 54px);
-            letter-spacing: 1.5px;
-            margin-bottom: 64px;
-            color: var(--text-primary);
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-            gap: 24px;
-        }
-
-        .feature-card {
-            background: var(--surface-card);
-            border: 1px solid var(--border-dark);
-            border-radius: var(--radius-lg);
-            padding: 36px 32px;
-            transition: all 0.3s var(--spring);
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(12px);
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        .feature-card.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at top right, var(--accent-subtle) 0%, transparent 60%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-
-        .feature-card:hover {
-            border-color: var(--accent);
-            transform: translateY(-6px);
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12), 0 0 24px var(--accent-subtle);
-        }
-
-        .feature-card:hover::before {
-            opacity: 1;
-        }
-
-        .feature-icon {
-            font-size: 26px;
-            margin-bottom: 22px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 52px;
-            height: 52px;
-            border-radius: var(--radius-md);
-            background: var(--surface-hover);
-            border: 1px solid var(--border-dark);
-            transition: transform 0.3s var(--spring), border-color 0.3s;
-        }
-
-        .feature-card:hover .feature-icon {
-            transform: scale(1.12) rotate(4deg);
-            border-color: var(--accent);
-        }
-
-        .feature-card h3 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-        }
-
-        .feature-card p {
-            font-size: 15px;
-            color: var(--text-secondary);
-            line-height: 1.65;
-        }
-
-        /* ── 6. Tech Stack Section ─────────────────────── */
-        .stack-section {
-            padding: 80px 40px;
-            border-top: 1px solid var(--border-dark);
-            border-bottom: 1px solid var(--border-dark);
-            text-align: center;
-            background: var(--surface-dark);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stack-label {
-            font-size: 13px;
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-            letter-spacing: 1px;
-            margin-bottom: 40px;
-            text-transform: uppercase;
-        }
-
-        .stack-items {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            flex-wrap: wrap;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .stack-item {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            padding: 14px 22px;
-            border-radius: var(--radius-md);
-            background: var(--surface-card);
-            border: 1px solid var(--border-dark);
-            transition: all 0.25s var(--spring);
-            min-width: 130px;
-        }
-
-        .stack-item:hover {
-            border-color: var(--accent);
-            transform: translateY(-4px) scale(1.04);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1), 0 0 16px var(--accent-subtle);
-        }
-
-        .stack-item .name {
-            font-family: var(--font-display);
-            font-size: 26px;
-            letter-spacing: 1px;
-            color: var(--text-primary);
-        }
-
-        .stack-item .role {
-            font-size: 11.5px;
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* ── 7. Call To Action (CTA) ───────────────────── */
-        .cta {
-            padding: 140px 24px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cta-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 700px;
-            height: 450px;
-            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 65%);
-            pointer-events: none;
-            border-radius: 50%;
-            filter: blur(50px);
-            animation: ctaPulse 6s ease-in-out infinite;
-        }
-
-        @keyframes ctaPulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
-            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
-        }
-
-        .cta h2 {
-            font-family: var(--font-display);
-            font-size: clamp(48px, 8vw, 76px);
-            letter-spacing: 1.5px;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .cta h2 span {
-            color: var(--accent);
-        }
-
-        .cta p {
-            color: var(--text-secondary);
-            font-size: 18px;
-            margin-bottom: 40px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .cta a {
-            position: relative;
-            z-index: 1;
-        }
-
-        /* ── 8. Footer ─────────────────────────────────── */
-        footer {
-            padding: 48px 40px;
-            border-top: 1px solid var(--border-dark);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: var(--text-secondary);
-            font-size: 14px;
-            background: var(--surface-dark);
-            position: relative;
-        }
-
-        footer p {
-            line-height: 1.6;
-        }
-
-        /* ── 9. Responsive Mobile ──────────────────────── */
-        @media (max-width: 768px) {
-            nav {
-                padding: 14px 20px;
-            }
-            .hero {
-                padding: 100px 18px 80px;
-            }
-            .hero h1 {
-                font-size: 72px;
-            }
-            .features {
-                padding: 80px 20px;
-            }
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-            .stack-section {
-                padding: 60px 20px;
-            }
-            .stack-items {
-                gap: 16px;
-            }
-            .hero-btns {
-                flex-direction: column;
-                width: 100%;
-                max-width: 320px;
-            }
-            .btn-large {
-                width: 100%;
-                text-align: center;
-                justify-content: center;
-            }
-            footer {
-                flex-direction: column;
-                gap: 16px;
-                text-align: center;
-                padding: 32px 20px;
-            }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/base.css"/>
+    <link rel="stylesheet" href="/static/landing.css"/>
 </head>
 <body>
 
-<!-- ── Navigation ────────────────────────────── -->
-<nav id="nav">
-    <a href="/" class="nav-brand">
-        <div class="nav-logo-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-            </svg>
-        </div>
-        <div class="nav-logo">DSA<span>Book</span></div>
-    </a>
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 
-    <div class="nav-links">
-        <!-- 4-Theme Selector -->
-        <div class="theme-selector-nav">
-            <button class="tdot" onclick="applyTheme('midnight')" title="Midnight" style="--dc:#e53935"><span></span></button>
-            <button class="tdot" onclick="applyTheme('dawn')" title="Dawn" style="--dc:#d4530a"><span></span></button>
-            <button class="tdot" onclick="applyTheme('ocean')" title="Ocean" style="--dc:#0ea5e9"><span></span></button>
-            <button class="tdot" onclick="applyTheme('arctic')" title="Arctic" style="--dc:#6366f1"><span></span></button>
-            <button class="theme-toggle-btn" onclick="toggleTheme()" title="Cycle Theme" aria-label="Cycle theme">
-                <span data-theme-icon></span>
-            </button>
-        </div>
-
-        <a href="/login" class="btn-ghost">Login</a>
-        <a href="/signup" class="btn-primary">Get Started Free →</a>
-    </div>
-</nav>
-
-<!-- ── Hero ──────────────────────────────────── -->
-<section class="hero">
-    <div class="hero-mesh" aria-hidden="true"></div>
-    <div class="hero-grid" aria-hidden="true"></div>
-    <div class="hero-orb hero-orb--1" aria-hidden="true"></div>
-    <div class="hero-orb hero-orb--2" aria-hidden="true"></div>
-
-    <div class="hero-content">
-        <div class="hero-badge">
-            <span class="badge-dot"></span>
-            RAG · Powered by your textbook library
-        </div>
-
-        <h1>Master<br/><span>DSA</span><br/>Faster</h1>
-
-        <p>
-            Ask any question about Data Structures &amp; Algorithms and receive instant, precise answers directly cited from your textbooks using advanced retrieval AI.
-        </p>
-
-        <div class="hero-btns">
-            <a href="/signup" class="btn-primary btn-large">Start Studying Free →</a>
-            <a href="/login" class="btn-ghost btn-large">Sign In</a>
+<header class="nav" id="nav">
+    <div class="container nav-inner">
+        <a href="/" class="brand">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5.5" r="2.2"/><circle cx="6.5" cy="18" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/><path d="M11 7.6 7.5 15.9M13 7.6l3.5 8.3"/></svg>
+            </span>
+            DSA Assistant
+        </a>
+        <nav class="nav-links" aria-label="Main">
+            <a href="#features">Features</a>
+            <a href="#how">How it works</a>
+        </nav>
+        <div class="nav-actions">
+            <div class="theme-picker" data-theme-picker>
+                <button class="icon-btn" data-theme-trigger aria-label="Change theme" title="Change theme">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16c3.1 0 5.6-2.5 5.6-5.6C21.9 6.1 17.4 2 12 2z"/></svg>
+                </button>
+            </div>
+            <a href="/login" class="btn btn-ghost">Sign in</a>
+            <a href="/signup" class="btn btn-primary">Get started</a>
         </div>
     </div>
-</section>
+</header>
 
-<!-- ── Features ──────────────────────────────── -->
-<section class="features">
-    <p class="section-label">Intelligent Learning Platform</p>
-    <h2 class="section-title">Everything You Need to Ace DSA</h2>
+<main>
+    <!-- ══════════ HERO ══════════ -->
+    <section class="hero">
+        <div class="container hero-grid">
+            <div>
+                <span class="eyebrow"><span class="eyebrow-dot"></span>Answers grounded in real textbooks</span>
+                <h1 data-split>Master data structures and algorithms, <span class="accent">straight from the source.</span></h1>
+                <p class="hero-lead">Ask any DSA question in plain language. DSA Assistant searches classic computer science textbooks and explains the answer step by step, with the sources it used.</p>
+                <div class="hero-ctas">
+                    <a href="/signup" class="btn btn-primary btn-lg magnetic">
+                        Start learning free
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="/login" class="btn btn-secondary btn-lg">Sign in</a>
+                </div>
+                <p class="hero-note">Free for students. No credit card required.</p>
+            </div>
 
-    <div class="features-grid">
-        <div class="feature-card">
-            <div class="feature-icon">📚</div>
-            <h3>Textbook-Powered RAG</h3>
-            <p>Answers are grounded strictly in your indexed DSA textbooks — preventing hallucinations and providing verified computer science explanations.</p>
+            <div class="preview-wrap" aria-hidden="true">
+                <span class="orbit-ring"></span><span class="orbit-ring r2"></span>
+                <span class="float-badge b1"><i>✓</i>Answer from 3 textbooks</span>
+                <span class="float-badge b2"><i>Σ</i>O(log n) time</span>
+                <span class="float-badge b3"><i>4</i>Step-by-step</span>
+                <div class="preview" id="preview">
+                    <div class="preview-bar"><i></i><i></i><i></i><span>DSA Assistant</span></div>
+                    <div class="preview-body">
+                        <div class="preview-side">
+                            <b>Today</b>
+                            <span class="on">Binary search complexity</span>
+                            <span>Dijkstra vs Bellman-Ford</span>
+                            <b>This week</b>
+                            <span>Red-black tree rotations</span>
+                            <span>Knapsack with DP</span>
+                        </div>
+                        <div class="preview-chat" id="previewChat">
+                            <div class="preview-user">How does binary search work?</div>
+                            <div class="typing"><i></i><i></i><i></i></div>
+                            <div class="preview-answer">
+                                <span class="brand-mark" data-s style="--s:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5.5" r="2.2"/><circle cx="6.5" cy="18" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/><path d="M11 7.6 7.5 15.9M13 7.6l3.5 8.3"/></svg></span>
+                                <div>
+                                    <h4 data-s style="--s:0">Binary search</h4>
+                                    <p data-s style="--s:1">Compare the target with the middle element and discard the half that can't contain it. Each step halves the range, giving <strong>O(log n)</strong> time.</p>
+                                    <div class="preview-code" data-s style="--s:2">
+                                        <div data-s style="--s:2.5"><span class="k">while</span> lo &lt;= hi:</div>
+                                        <div data-s style="--s:3">    mid = (lo + hi) // 2</div>
+                                        <div data-s style="--s:3.5">    <span class="k">if</span> a[mid] == x: <span class="k">return</span> mid</div>
+                                        <div data-s style="--s:4">    <span class="k">if</span> a[mid] &lt; x: lo = mid + 1  <span class="c"># go right</span></div>
+                                        <div data-s style="--s:4.5">    <span class="k">else</span>: hi = mid - 1</div>
+                                    </div>
+                                    <div class="preview-tags" data-s style="--s:5.5"><span>Introduction to Algorithms</span><span>Open Data Structures</span></div>
+                                </div>
+                            </div>
+                            <div class="preview-input">Ask a follow-up…<i></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <div class="feature-card">
-            <div class="feature-icon">⚡</div>
-            <h3>Lightning Fast Responses</h3>
-            <p>Accelerated with high-speed LLM inference so your study sessions never lag. Code snippets, proofs, and walkthroughs in milliseconds.</p>
+    <!-- ══════════ LIBRARY ══════════ -->
+    <section class="library">
+        <div class="container">
+            <p>Answers drawn from trusted texts, including</p>
+            <div class="marquee">
+                <div class="marquee-track">
+                    {% for _ in range(2) %}
+                    <span class="book" {% if loop.index == 2 %}aria-hidden="true"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Introduction to Algorithms</span>
+                    <span class="book" {% if loop.index == 2 %}aria-hidden="true"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Algorithms, Sedgewick &amp; Wayne</span>
+                    <span class="book" {% if loop.index == 2 %}aria-hidden="true"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Open Data Structures</span>
+                    <span class="book" {% if loop.index == 2 %}aria-hidden="true"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Algorithms, Jeff Erickson</span>
+                    <span class="book" {% if loop.index == 2 %}aria-hidden="true"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Data Structures and Algorithms Made Easy</span>
+                    <span class="book" {% if loop.index == 2 %}aria-hidden="true"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Algorithms and Data Structures, Nievergelt</span>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
+    </section>
 
-        <div class="feature-card">
-            <div class="feature-icon">🗂️</div>
-            <h3>Persistent Chat History</h3>
-            <p>Every conversation is saved and organized chronologically. Filter, search, rename, and pick up right where you left off at any time.</p>
+    <!-- ══════════ STATS ══════════ -->
+    <section class="container">
+        <div class="stats reveal">
+            <div class="stat" style="--i:0"><b data-count="10">0</b><span>classic textbooks</span></div>
+            <div class="stat" style="--i:1"><b data-count="30000" data-suffix="+">0</b><span>indexed passages</span></div>
+            <div class="stat" style="--i:2"><b data-count="5">0</b><span>themes to choose from</span></div>
+            <div class="stat" style="--i:3"><b data-count="24" data-suffix="/7">0</b><span>study help</span></div>
         </div>
+    </section>
 
-        <div class="feature-card">
-            <div class="feature-icon">🔐</div>
-            <h3>Private &amp; Secure Account</h3>
-            <p>End-to-end user isolation with hashed credentials, OTP reset flows, and private vector partitions so your notes stay completely yours.</p>
+    <!-- ══════════ FEATURES ══════════ -->
+    <section class="section" id="features">
+        <div class="container">
+            <div class="section-head reveal">
+                <p class="section-kicker">Features</p>
+                <h2 class="section-title">Built for how you actually study</h2>
+                <p class="section-lead">Clear explanations you can trust, in a workspace that keeps up with you.</p>
+            </div>
+            <div class="features reveal">
+                <div class="feature" style="--i:0">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+                    <h3>Grounded in textbooks</h3>
+                    <p>Answers are built from passages retrieved from indexed books, not guesswork, and list the sources they used.</p>
+                </div>
+                <div class="feature" style="--i:1">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></div>
+                    <h3>Step-by-step answers</h3>
+                    <p>Explanations unfold in order, with numbered steps, headings and tables that make complex topics easy to follow.</p>
+                </div>
+                <div class="feature" style="--i:2">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg></div>
+                    <h3>Readable code</h3>
+                    <p>Code examples come with syntax colors, line numbers, language labels and one-click copy.</p>
+                </div>
+                <div class="feature" style="--i:3">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                    <h3>Saved conversations</h3>
+                    <p>Every chat is saved to your account. Search, rename and pick up any topic where you left off.</p>
+                </div>
+                <div class="feature" style="--i:4">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3"/></svg></div>
+                    <h3>Bring your own books</h3>
+                    <p>Upload a PDF textbook and it is indexed into the library, ready to be used in answers.</p>
+                </div>
+                <div class="feature" style="--i:5">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16c3.1 0 5.6-2.5 5.6-5.6C21.9 6.1 17.4 2 12 2z"/></svg></div>
+                    <h3>Five themes</h3>
+                    <p>Daylight, Midnight, Aurora, Sunset and Ocean. Pick the one that suits you, on desktop and mobile.</p>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <div class="feature-card">
-            <div class="feature-icon">🎨</div>
-            <h3>4 Dynamic Pro Themes</h3>
-            <p>Switch seamlessly between Midnight, Dawn, Ocean, and Arctic modes engineered for eye comfort during late-night coding marathons.</p>
+    <!-- ══════════ HOW IT WORKS ══════════ -->
+    <section class="section" id="how">
+        <div class="container">
+            <div class="section-head reveal">
+                <p class="section-kicker">How it works</p>
+                <h2 class="section-title">From question to answer in seconds</h2>
+            </div>
+            <div class="steps reveal">
+                <div class="step" style="--i:0">
+                    <h3>Ask a question</h3>
+                    <p>Type anything, from "what is a trie?" to "compare Prim's and Kruskal's algorithms".</p>
+                </div>
+                <div class="step" style="--i:1">
+                    <h3>Relevant passages are found</h3>
+                    <p>Your question is matched against thousands of indexed textbook passages to find the most relevant ones.</p>
+                </div>
+                <div class="step" style="--i:2">
+                    <h3>Get a sourced explanation</h3>
+                    <p>A language model writes a clear, step-by-step answer using only those passages and lists the books it drew from.</p>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <div class="feature-card">
-            <div class="feature-icon">🎓</div>
-            <h3>Engineered for CS Students</h3>
-            <p>Optimized for algorithm proofs, Big-O complexity analysis, pseudocode decomposition, and interview problem-solving strategies.</p>
+    <!-- ══════════ CTA ══════════ -->
+    <div class="container">
+        <section class="cta-band reveal">
+            <h2>Start studying smarter today</h2>
+            <p>Create a free account and ask your first question in under a minute.</p>
+            <a href="/signup" class="btn btn-lg btn-light magnetic">Create free account</a>
+        </section>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container footer-inner">
+        <a href="/" class="brand">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5.5" r="2.2"/><circle cx="6.5" cy="18" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/><path d="M11 7.6 7.5 15.9M13 7.6l3.5 8.3"/></svg>
+            </span>
+            DSA Assistant
+        </a>
+        <p>© 2026 DSA Assistant. Answers may contain mistakes; check important details against the source.</p>
+        <div class="footer-links">
+            <a href="/login">Sign in</a>
+            <a href="/signup">Create account</a>
         </div>
     </div>
-</section>
-
-<!-- ── Tech Stack ────────────────────────────── -->
-<section class="stack-section">
-    <p class="stack-label">// Built With Production-Grade Architecture</p>
-    <div class="stack-items">
-        <div class="stack-item">
-            <span class="name">Flask</span>
-            <span class="role">Python Backend</span>
-        </div>
-        <div class="stack-item">
-            <span class="name">PostgreSQL</span>
-            <span class="role">Relational DB</span>
-        </div>
-        <div class="stack-item">
-            <span class="name">pgvector</span>
-            <span class="role">Vector Index</span>
-        </div>
-        <div class="stack-item">
-            <span class="name">Groq</span>
-            <span class="role">LPU Inference</span>
-        </div>
-        <div class="stack-item">
-            <span class="name">LangChain</span>
-            <span class="role">RAG Orchestration</span>
-        </div>
-        <div class="stack-item">
-            <span class="name">HuggingFace</span>
-            <span class="role">Embeddings</span>
-        </div>
-    </div>
-</section>
-
-<!-- ── Call To Action ────────────────────────── -->
-<section class="cta">
-    <div class="cta-glow" aria-hidden="true"></div>
-    <h2>Ready to <span>Study Smarter?</span></h2>
-    <p>Join students mastering Data Structures &amp; Algorithms with AI.</p>
-    <a href="/signup" class="btn-primary btn-large">Create Free Account →</a>
-</section>
-
-<!-- ── Footer ────────────────────────────────── -->
-<footer>
-    <p>© 2026 DSABook Assistant · Built for Computer Science Excellence</p>
-    <p>Flask · PostgreSQL · pgvector · Groq · LangChain</p>
 </footer>
 
+<script src="/static/bg.js"></script>
 <script>
-    // Navbar scroll effect
-    window.addEventListener('scroll', () => {
-        document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 20);
-    });
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Staggered reveal for feature cards
-    const cards = document.querySelectorAll('.feature-card');
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                observer.unobserve(entry.target);
+    // Sticky nav background
+    const nav = document.getElementById('nav');
+    const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Wrap each headline word in a span so it can animate in on its own.
+    document.querySelectorAll('[data-split]').forEach(el => {
+        let w = 0;
+        const split = node => [...node.childNodes].forEach(child => {
+            if (child.nodeType === Node.TEXT_NODE) {
+                const frag = document.createDocumentFragment();
+                child.textContent.split(/(\s+)/).forEach(part => {
+                    if (!part) return;
+                    if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+                    const span = document.createElement('span');
+                    span.className = 'word';
+                    span.style.setProperty('--w', w++);
+                    span.textContent = part;
+                    frag.appendChild(span);
+                });
+                child.replaceWith(frag);
+            } else {
+                split(child);
             }
         });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-
-    cards.forEach((card, index) => {
-        card.style.transitionDelay = `${(index % 3) * 120}ms`;
-        observer.observe(card);
+        split(el);
     });
 
-    // Sync theme dots active state
-    function syncNavDots() {
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'midnight';
-        document.querySelectorAll('.tdot').forEach(d => {
-            const title = (d.getAttribute('title') || '').toLowerCase();
-            d.classList.toggle('active', title === currentTheme);
+    // Scroll reveal
+    const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    // Cursor spotlight on feature cards
+    document.querySelectorAll('.feature').forEach(card => {
+        card.addEventListener('pointermove', e => {
+            const r = card.getBoundingClientRect();
+            card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+            card.style.setProperty('--my', `${e.clientY - r.top}px`);
+        });
+    });
+
+    // Scroll progress bar
+    const bar = document.getElementById('scrollProgress');
+    let barQueued = false;
+    window.addEventListener('scroll', () => {
+        if (barQueued) return;
+        barQueued = true;
+        requestAnimationFrame(() => {
+            const max = document.documentElement.scrollHeight - innerHeight;
+            bar.style.setProperty('--p', max > 0 ? scrollY / max : 0);
+            barQueued = false;
+        });
+    }, { passive: true });
+
+    // Count-up numbers when the stats scroll into view
+    const countUp = el => {
+        const target = +el.dataset.count, suffix = el.dataset.suffix || '';
+        if (reduceMotion) { el.textContent = target.toLocaleString() + suffix; return; }
+        const start = performance.now(), dur = 1400;
+        const tick = now => {
+            const t = Math.min(1, (now - start) / dur);
+            el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3))).toLocaleString() + suffix;
+            if (t < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    };
+    const statsIo = new IntersectionObserver(entries => entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.querySelectorAll('[data-count]').forEach(countUp);
+        statsIo.unobserve(e.target);
+    }), { threshold: .4 });
+    document.querySelectorAll('.stats').forEach(el => statsIo.observe(el));
+
+    // Magnetic buttons and 3D-tilting feature cards (mouse only)
+    if (!reduceMotion && window.matchMedia('(pointer: fine)').matches) {
+        document.querySelectorAll('.magnetic').forEach(btn => {
+            btn.addEventListener('pointermove', e => {
+                const r = btn.getBoundingClientRect();
+                btn.style.setProperty('--mx', `${(e.clientX - r.left - r.width / 2) * .25}px`);
+                btn.style.setProperty('--my', `${(e.clientY - r.top - r.height / 2) * .35}px`);
+            });
+            btn.addEventListener('pointerleave', () => { btn.style.removeProperty('--mx'); btn.style.removeProperty('--my'); });
+        });
+        document.querySelectorAll('.feature').forEach(card => {
+            card.addEventListener('pointermove', e => {
+                const r = card.getBoundingClientRect();
+                card.style.setProperty('--ty', `${((e.clientX - r.left) / r.width - .5) * 8}deg`);
+                card.style.setProperty('--tx', `${-((e.clientY - r.top) / r.height - .5) * 8}deg`);
+            });
+            card.addEventListener('pointerleave', () => { card.style.removeProperty('--tx'); card.style.removeProperty('--ty'); });
         });
     }
 
-    window.addEventListener('themechange', syncNavDots);
-    syncNavDots();
+    // Live demo: replay the scripted conversation, and tilt the window with the cursor.
+    const chat = document.getElementById('previewChat');
+    const preview = document.getElementById('preview');
+    if (!reduceMotion) {
+        const play = () => { chat.classList.remove('play'); void chat.offsetWidth; chat.classList.add('play'); };
+        play();
+        setInterval(play, 11000);
+        preview.addEventListener('pointermove', e => {
+            if (window.innerWidth < 960) return;
+            const r = preview.getBoundingClientRect();
+            const x = (e.clientX - r.left) / r.width - .5;
+            const y = (e.clientY - r.top) / r.height - .5;
+            preview.style.setProperty('--ry', `${x * 10}deg`);
+            preview.style.setProperty('--rx', `${-y * 8}deg`);
+        });
+        preview.addEventListener('pointerleave', () => {
+            preview.style.removeProperty('--ry');
+            preview.style.removeProperty('--rx');
+        });
+    } else {
+        chat.querySelectorAll('[data-s]').forEach(el => el.style.opacity = 1);
+    }
 </script>
 </body>
 </html>

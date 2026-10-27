@@ -46,6 +46,7 @@ def init_db():
             used       INTEGER DEFAULT 0
         )
     """)
+    cur.execute("ALTER TABLE reset_tokens ADD COLUMN IF NOT EXISTS attempts INTEGER DEFAULT 0")
 
     conn.commit()
     cur.close()

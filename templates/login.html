@@ -3,1192 +3,233 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Login — DSA Assistant</title>
+    <title>Sign in · DSA Assistant</title>
+    <meta name="description" content="Sign in to DSA Assistant to keep learning data structures and algorithms."/>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cg fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='16' cy='8' r='2.6'/%3E%3Ccircle cx='9' cy='23' r='2.6'/%3E%3Ccircle cx='23' cy='23' r='2.6'/%3E%3Cpath d='M14.6 10.3 10.4 20.7M17.4 10.3l4.2 10.4'/%3E%3C/g%3E%3C/svg%3E"/>
     <script src="/static/theme.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
-    
-    <style>
-        :root {
-            --bg-dark: #0a0a0a;
-            --surface-dark: #111111;
-            --surface-hover: #1e1e1e;
-            --border-dark: #2a2a2a;
-            --text-primary: #ffffff;
-            --text-secondary: #888888;
-            --accent: #e53935;
-            --accent-hover: #ff1744;
-            --error-bg: rgba(229, 57, 53, 0.1);
-            --error-text: #ff5252;
-            --success-bg: rgba(34, 197, 94, 0.1);
-            --success-text: #4ade80;
-            --font-body: 'Outfit', sans-serif;
-            --font-display: 'Bebas Neue', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
-        
-        [data-theme="dawn"] {
-            --bg-dark: #faf5f0;
-            --surface-dark: #fefcf9;
-            --surface-hover: #f5efe8;
-            --border-dark: #e8ddd0;
-            --text-primary: #2d1f11;
-            --text-secondary: #7a6650;
-            --accent: #d4530a;
-            --accent-hover: #e86315;
-            --error-bg: rgba(212, 83, 10, 0.1);
-            --error-text: #c2410c;
-        }
-
-        [data-theme="ocean"] {
-            --bg-dark: #060d16;
-            --surface-dark: #0a1220;
-            --surface-hover: #101d33;
-            --border-dark: #152540;
-            --text-primary: #e2eaf5;
-            --text-secondary: #7b9bc0;
-            --accent: #0ea5e9;
-            --accent-hover: #38bdf8;
-            --error-bg: rgba(229, 57, 53, 0.12);
-            --error-text: #f87171;
-        }
-
-        [data-theme="arctic"],
-        [data-theme="light"] {
-            --bg-dark: #f4f7fb;
-            --surface-dark: #ffffff;
-            --surface-hover: #f0f3f8;
-            --border-dark: #e2e8f0;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --accent: #6366f1;
-            --accent-hover: #818cf8;
-            --error-bg: rgba(239, 68, 68, 0.1);
-            --error-text: #dc2626;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: var(--font-body);
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            transition: background 0.3s ease, color 0.3s ease;
-            overflow-x: hidden;
-        }
-
-        /* -------------------------------------------------------------
-           LEFT BRAND PANEL (Desktop & Tablet Landscape)
-        ------------------------------------------------------------- */
-        .left-panel {
-            flex: 1.15;
-            background: var(--surface-dark);
-            border-right: 1px solid var(--border-dark);
-            padding: 70px 80px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-        }
-
-        /* Radial glow accents */
-        .left-panel::before {
-            content: '';
-            position: absolute;
-            top: -15%;
-            left: -15%;
-            width: 70%;
-            height: 70%;
-            background: radial-gradient(circle, rgba(229, 57, 53, 0.15) 0%, rgba(229, 57, 53, 0.03) 50%, transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
-            filter: blur(40px);
-            z-index: -1;
-        }
-
-        .left-panel::after {
-            content: '';
-            position: absolute;
-            bottom: -20%;
-            right: -20%;
-            width: 60%;
-            height: 60%;
-            background: radial-gradient(circle, rgba(229, 57, 53, 0.1) 0%, transparent 65%);
-            border-radius: 50%;
-            pointer-events: none;
-            filter: blur(50px);
-            z-index: -1;
-        }
-
-        .panel-brand {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .panel-logo {
-            font-family: var(--font-display);
-            font-size: 32px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        .panel-logo span {
-            color: var(--accent);
-        }
-
-        .brand-badge {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            padding: 3px 8px;
-            border-radius: 4px;
-            background: rgba(229, 57, 53, 0.12);
-            color: var(--accent);
-            border: 1px solid rgba(229, 57, 53, 0.25);
-        }
-
-        .panel-center {
-            margin: auto 0;
-            padding: 40px 0;
-        }
-
-        .panel-title {
-            font-family: var(--font-display);
-            font-size: clamp(52px, 5.5vw, 76px);
-            line-height: 0.95;
-            letter-spacing: 1.5px;
-            margin-bottom: 22px;
-            text-transform: uppercase;
-        }
-        .panel-title span {
-            color: var(--accent);
-        }
-
-        .panel-desc {
-            font-size: 16px;
-            color: var(--text-secondary);
-            line-height: 1.65;
-            margin-bottom: 36px;
-            max-width: 440px;
-            font-weight: 400;
-        }
-
-        .panel-features {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            max-width: 420px;
-        }
-
-        .panel-feature {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            color: var(--text-secondary);
-            font-size: 15px;
-            font-weight: 400;
-            transition: color 0.2s ease, transform 0.2s ease;
-        }
-        .panel-feature:hover {
-            color: var(--text-primary);
-            transform: translateX(4px);
-        }
-
-        .feature-icon-wrap {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: rgba(229, 57, 53, 0.12);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--accent);
-            flex-shrink: 0;
-            box-shadow: 0 0 10px rgba(229, 57, 53, 0.2);
-        }
-
-        .panel-footer {
-            padding-top: 24px;
-        }
-
-        .panel-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 14px;
-            border-radius: 999px;
-            background: var(--surface-hover);
-            border: 1px solid var(--border-dark);
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-family: var(--font-mono);
-        }
-        .pill-dot {
-            width: 7px;
-            height: 7px;
-            background: #22c55e;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #22c55e;
-        }
-
-        /* -------------------------------------------------------------
-           RIGHT FORM PANEL
-        ------------------------------------------------------------- */
-        .right-panel {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 24px;
-            background: var(--bg-dark);
-            position: relative;
-            min-height: 100vh;
-        }
-
-        .form-box {
-            width: 100%;
-            max-width: 420px;
-            animation: formEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes formEntrance {
-            from {
-                opacity: 0;
-                transform: translateY(24px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .mobile-logo {
-            display: none;
-            font-family: var(--font-display);
-            font-size: 32px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 24px;
-            text-align: center;
-        }
-        .mobile-logo span {
-            color: var(--accent);
-        }
-
-        .form-header {
-            margin-bottom: 28px;
-        }
-
-        .form-header h2 {
-            font-size: 30px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 8px;
-        }
-
-        .form-header p {
-            font-size: 14.5px;
-            color: var(--text-secondary);
-        }
-
-        .form-header p a {
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.2s ease, text-decoration 0.2s ease;
-        }
-        .form-header p a:hover {
-            color: var(--accent-hover);
-            text-decoration: underline;
-        }
-
-        /* -------------------------------------------------------------
-           FORM CONTROLS & INPUTS
-        ------------------------------------------------------------- */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .label-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .forgot-link {
-            font-size: 12.5px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            cursor: pointer;
-            font-weight: 500;
-            transition: color 0.2s ease;
-        }
-        .forgot-link:hover {
-            color: var(--accent);
-        }
-
-        .input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-wrapper .input-icon {
-            position: absolute;
-            left: 14px;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none;
-            transition: color 0.2s ease;
-        }
-
-        .input-wrapper input {
-            width: 100%;
-            padding: 13px 16px 13px 44px;
-            background: var(--surface-dark);
-            border: 1px solid var(--border-dark);
-            border-radius: 10px;
-            color: var(--text-primary);
-            font-family: var(--font-body);
-            font-size: 14.5px;
-            transition: border-color 0.2s ease, box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
-            outline: none;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .input-wrapper input.with-toggle {
-            padding-right: 46px;
-        }
-
-        .input-wrapper input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.18), 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .input-wrapper:focus-within .input-icon {
-            color: var(--accent);
-        }
-
-        /* Password Show/Hide Toggle Button */
-        .password-toggle-btn {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.2s ease, background 0.2s ease, transform 0.15s ease;
-        }
-        .password-toggle-btn:hover {
-            color: var(--text-primary);
-            background: var(--surface-hover);
-        }
-        .password-toggle-btn:active {
-            transform: translateY(-50%) scale(0.92);
-        }
-
-        /* -------------------------------------------------------------
-           BUTTONS & ACTIONS
-        ------------------------------------------------------------- */
-        .submit-btn {
-            width: 100%;
-            padding: 13px 20px;
-            background: var(--text-primary);
-            color: var(--bg-dark);
-            border: none;
-            border-radius: 10px;
-            font-size: 14.5px;
-            font-weight: 600;
-            font-family: var(--font-body);
-            cursor: pointer;
-            transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease, background-color 0.2s ease, color 0.2s ease;
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            letter-spacing: 0.2px;
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px -4px rgba(229, 57, 53, 0.25), 0 4px 12px -2px rgba(0, 0, 0, 0.15);
-            background: #ffffff;
-            color: #000000;
-        }
-
-        [data-theme="light"] .submit-btn:hover:not(:disabled), [data-theme="arctic"] .submit-btn:hover:not(:disabled), [data-theme="dawn"] .submit-btn:hover:not(:disabled) {
-            background: #000000;
-            color: #ffffff;
-            box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.2);
-        }
-
-        .submit-btn:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        .submit-btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin: 26px 0;
-            color: var(--text-secondary);
-            font-size: 12.5px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .divider::before, .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border-dark);
-        }
-
-        .signup-prompt {
-            text-align: center;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        .signup-prompt a {
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: 600;
-            margin-left: 4px;
-            transition: color 0.2s ease;
-        }
-        .signup-prompt a:hover {
-            color: var(--accent-hover);
-            text-decoration: underline;
-        }
-
-        /* -------------------------------------------------------------
-           ALERTS
-        ------------------------------------------------------------- */
-        .alert {
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 13.5px;
-            font-weight: 500;
-            margin-bottom: 20px;
-            display: none;
-            line-height: 1.45;
-            animation: alertSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes alertSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-6px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .alert.error {
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid rgba(229, 57, 53, 0.25);
-        }
-
-        .alert.success {
-            background: var(--success-bg);
-            color: var(--success-text);
-            border: 1px solid rgba(34, 197, 94, 0.25);
-        }
-
-        /* -------------------------------------------------------------
-           MODAL (FORGOT PASSWORD)
-        ------------------------------------------------------------- */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.72);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal-overlay.show {
-            display: flex;
-            animation: overlayFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes overlayFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal-box {
-            background: var(--surface-dark);
-            border: 1px solid var(--border-dark);
-            border-radius: 16px;
-            padding: 34px 32px;
-            width: 100%;
-            max-width: 440px;
-            position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
-            animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        @keyframes modalSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(28px) scale(0.96);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 18px;
-            right: 18px;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s ease, color 0.2s ease;
-        }
-        .modal-close:hover {
-            background: var(--surface-hover);
-            color: var(--text-primary);
-        }
-
-        .modal-step {
-            display: none;
-        }
-        .modal-step.active {
-            display: block;
-            animation: stepFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes stepFade {
-            from {
-                opacity: 0;
-                transform: translateX(8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .modal-title {
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: -0.3px;
-            margin-bottom: 8px;
-        }
-
-        .modal-desc {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 24px;
-            line-height: 1.55;
-        }
-
-        .step-back {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-bottom: 16px;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.2s ease, transform 0.2s ease;
-        }
-        .step-back:hover {
-            color: var(--text-primary);
-            transform: translateX(-3px);
-        }
-
-        /* -------------------------------------------------------------
-           OTP INPUTS
-        ------------------------------------------------------------- */
-        .otp-inputs {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin: 24px 0;
-        }
-
-        .otp-inputs input {
-            width: 48px;
-            height: 56px;
-            text-align: center;
-            font-size: 22px;
-            font-weight: 600;
-            font-family: var(--font-mono);
-            background: var(--bg-dark);
-            border: 1.5px solid var(--border-dark);
-            border-radius: 10px;
-            color: var(--text-primary);
-            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, transform 0.2s ease;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-            outline: none;
-        }
-
-        .otp-inputs input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .otp-inputs input.filled {
-            border-color: var(--accent);
-            background: var(--surface-hover);
-            color: var(--text-primary);
-            box-shadow: 0 0 0 1px var(--accent);
-        }
-
-        .resend-row {
-            text-align: center;
-            font-size: 13.5px;
-            color: var(--text-secondary);
-            margin-top: 18px;
-        }
-        .resend-row span {
-            color: var(--accent);
-            cursor: pointer;
-            font-weight: 600;
-            transition: color 0.2s ease, text-decoration 0.2s ease;
-        }
-        .resend-row span:hover {
-            color: var(--accent-hover);
-            text-decoration: underline;
-        }
-
-        /* -------------------------------------------------------------
-           PASSWORD STRENGTH METER (STEP 3)
-        ------------------------------------------------------------- */
-        .strength-container {
-            margin: 14px 0 20px 0;
-            padding: 14px 16px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border-dark);
-            border-radius: 10px;
-        }
-
-        .strength-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            margin-bottom: 8px;
-        }
-
-        .strength-header-label {
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .strength-text {
-            font-weight: 600;
-            font-size: 12px;
-            letter-spacing: 0.3px;
-            transition: color 0.2s ease;
-        }
-        .strength-text.weak { color: #ef4444; }
-        .strength-text.fair { color: #f59e0b; }
-        .strength-text.good { color: #3b82f6; }
-        .strength-text.strong { color: var(--success-text); }
-
-        .strength-bars {
-            display: flex;
-            gap: 6px;
-            height: 4px;
-            margin-bottom: 12px;
-        }
-
-        .strength-bar-segment {
-            flex: 1;
-            background: var(--border-dark);
-            border-radius: 3px;
-            transition: background-color 0.25s ease;
-        }
-        .strength-bar-segment.weak { background-color: #ef4444; }
-        .strength-bar-segment.fair { background-color: #f59e0b; }
-        .strength-bar-segment.good { background-color: #3b82f6; }
-        .strength-bar-segment.strong { background-color: var(--success-text); }
-
-        .strength-criteria {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .criterion {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            transition: color 0.2s ease;
-        }
-
-        .criterion .crit-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 14px;
-            height: 14px;
-            font-size: 11px;
-            color: var(--text-secondary);
-            transition: color 0.2s ease, transform 0.2s ease;
-        }
-
-        .criterion.valid {
-            color: var(--text-primary);
-        }
-        .criterion.valid .crit-icon {
-            color: var(--success-text);
-            font-weight: bold;
-        }
-
-        /* Step 4 Success icon */
-        .success-icon-wrap {
-            width: 64px;
-            height: 64px;
-            margin: 10px auto 20px auto;
-            border-radius: 50%;
-            background: var(--success-bg);
-            border: 2px solid rgba(34, 197, 94, 0.3);
-            color: var(--success-text);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
-        }
-
-        /* -------------------------------------------------------------
-           THEME FLOAT BUTTON
-        ------------------------------------------------------------- */
-        .theme-float {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            background: var(--surface-dark);
-            border: 1px solid var(--border-dark);
-            color: var(--text-primary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.25);
-            z-index: 999;
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .theme-float:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 8px 20px -2px rgba(229, 57, 53, 0.25);
-        }
-        .theme-float:active {
-            transform: translateY(0) scale(0.95);
-        }
-
-        /* -------------------------------------------------------------
-           RESPONSIVE BREAKPOINTS (320px - 1920px+)
-        ------------------------------------------------------------- */
-        @media (max-width: 1024px) {
-            .left-panel {
-                padding: 50px 40px;
-            }
-            .panel-title {
-                font-size: 54px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .left-panel {
-                display: none;
-            }
-            .right-panel {
-                padding: 40px 20px;
-                align-items: center;
-            }
-            .mobile-logo {
-                display: block;
-            }
-            .form-box {
-                max-width: 100%;
-            }
-            .theme-float {
-                bottom: 16px;
-                right: 16px;
-                width: 40px;
-                height: 40px;
-            }
-        }
-
-        @media (max-width: 420px) {
-            .otp-inputs {
-                gap: 6px;
-            }
-            .otp-inputs input {
-                width: 40px;
-                height: 50px;
-                font-size: 18px;
-            }
-            .modal-box {
-                padding: 26px 20px;
-            }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/base.css"/>
+    <link rel="stylesheet" href="/static/auth.css"/>
 </head>
 <body>
 
-<!-- LEFT BRAND PANEL -->
-<div class="left-panel">
-    <div class="panel-brand">
-        <a href="/" class="panel-logo" style="text-decoration: none; color: inherit;">DSA<span>Assistant</span></a>
-        <span class="brand-badge">RAG AI</span>
-    </div>
-
-    <div class="panel-center">
-        <h1 class="panel-title">Welcome<br/><span>Back</span></h1>
-        <p class="panel-desc">Sign in to your account and continue your algorithm mastering journey with real-time textbook-grounded answers.</p>
-        
-        <div class="panel-features">
-            <div class="panel-feature">
-                <div class="feature-icon-wrap">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                </div>
-                <span>Your conversations saved privately</span>
-            </div>
-            <div class="panel-feature">
-                <div class="feature-icon-wrap">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                </div>
-                <span>Pick up exactly where you left off</span>
-            </div>
-            <div class="panel-feature">
-                <div class="feature-icon-wrap">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                </div>
-                <span>Ask from 6+ indexed DSA textbooks</span>
-            </div>
-            <div class="panel-feature">
-                <div class="feature-icon-wrap">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                </div>
-                <span>Instant answers via Groq LLM inference</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="panel-footer">
-        <div class="panel-pill">
-            <span class="pill-dot"></span>
-            <span>Groq LPU Active &bull; Sub-second response</span>
-        </div>
-    </div>
-</div>
-
-<!-- RIGHT FORM PANEL -->
-<div class="right-panel">
-    <div class="form-box">
-        <div class="mobile-logo">DSA<span>Assistant</span></div>
-
-        <div class="form-header">
-            <h2>Sign In</h2>
-            <p>Don't have an account? <a href="/signup">Create one free</a></p>
-        </div>
-
-        <div class="alert" id="alertBox"></div>
-
-        <div class="form-group">
-            <label for="email">Email Address</label>
-            <div class="input-wrapper">
-                <span class="input-icon">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                    </svg>
+<div class="auth">
+    <main class="auth-main">
+        <div class="auth-top">
+            <a href="/" class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5.5" r="2.2"/><circle cx="6.5" cy="18" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/><path d="M11 7.6 7.5 15.9M13 7.6l3.5 8.3"/></svg>
                 </span>
-                <input type="email" id="email" placeholder="you@example.com" autocomplete="email"/>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <div class="label-row">
-                <label for="password">Password</label>
-                <span class="forgot-link" onclick="openForgot()" role="button" tabindex="0">Forgot password?</span>
-            </div>
-            <div class="input-wrapper">
-                <span class="input-icon">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                </span>
-                <input type="password" id="password" class="with-toggle" placeholder="Enter your password" autocomplete="current-password"/>
-                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('password', this)" aria-label="Toggle password visibility">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
+                DSA Assistant
+            </a>
+            <div class="theme-picker" data-theme-picker>
+                <button class="icon-btn" data-theme-trigger aria-label="Change theme" title="Change theme">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16c3.1 0 5.6-2.5 5.6-5.6C21.9 6.1 17.4 2 12 2z"/></svg>
                 </button>
             </div>
         </div>
 
-        <button class="submit-btn" id="loginBtn" onclick="handleLogin()">
-            <span>Sign In</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-        </button>
+        <div class="auth-form-wrap">
+            <form class="auth-form" id="loginForm" novalidate>
+                <h1>Welcome back</h1>
+                <p class="auth-sub">Sign in to continue where you left off.</p>
 
-        <div class="divider">or</div>
+                <div class="alert" id="alertBox" role="alert"></div>
 
-        <p class="signup-prompt">
-            New here? <a href="/signup">Create free account →</a>
-        </p>
-    </div>
+                <div class="field">
+                    <label class="label" for="email">Email</label>
+                    <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required/>
+                </div>
+
+                <div class="field">
+                    <div class="field-row">
+                        <label class="label" for="password">Password</label>
+                        <button type="button" class="text-btn" onclick="openForgot()">Forgot password?</button>
+                    </div>
+                    <div class="input-wrap">
+                        <input class="input has-toggle" type="password" id="password" placeholder="Enter your password" autocomplete="current-password" required/>
+                        <button type="button" class="input-toggle" onclick="togglePasswordVisibility('password', this)" aria-label="Show password"></button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Sign in</button>
+
+                <p class="auth-switch">Don't have an account? <a href="/signup" class="link">Create one</a></p>
+            </form>
+        </div>
+
+        <p class="auth-foot">Answers are generated from indexed textbooks and may contain mistakes.</p>
+    </main>
+
+    <aside class="auth-aside" aria-hidden="true">
+        <div>
+            <h2 class="aside-title">Learn algorithms from the books that teach them.</h2>
+            <p class="aside-text">Every answer is retrieved from classic DSA textbooks and cites where it came from, so you can always go deeper.</p>
+        </div>
+
+        <div class="preview-card">
+            <div class="preview-q">What is the time complexity of binary search?</div>
+            <div class="preview-dots"><i></i><i></i><i></i></div>
+            <div class="preview-a">
+                <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5.5" r="2.2"/><circle cx="6.5" cy="18" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/><path d="M11 7.6 7.5 15.9M13 7.6l3.5 8.3"/></svg></span>
+                <div>
+                    <p>Binary search halves the search range on every comparison, so it runs in <strong>O(log n)</strong> time on a sorted array.</p>
+                    <span class="preview-source"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Introduction to Algorithms</span>
+                </div>
+            </div>
+        </div>
+
+        <ul class="aside-points">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Your conversations are saved to your account</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Code examples with line numbers and one-click copy</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Add your own PDF textbooks to the library</li>
+        </ul>
+    </aside>
 </div>
 
-<!-- FORGOT PASSWORD MODAL -->
-<div class="modal-overlay" id="forgotModal">
+<!-- ══════════ FORGOT PASSWORD ══════════ -->
+<div class="modal-overlay" id="forgotModal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
     <div class="modal-box">
-        <button class="modal-close" onclick="closeForgot()" aria-label="Close modal">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+        <button class="icon-btn modal-close" onclick="closeForgot()" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
 
-        <!-- STEP 1: Email -->
-        <div class="modal-step active" id="step1">
-            <h3 class="modal-title">Forgot Password?</h3>
-            <p class="modal-desc">Enter your registered email address. We'll send you a 6-digit OTP to reset your password.</p>
-            <div class="alert" id="step1Alert"></div>
-            <div class="form-group">
-                <label for="resetEmail">Email Address</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                    </span>
-                    <input type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email"/>
-                </div>
+        <!-- Step 1: email -->
+        <form class="modal-step active" id="step1" novalidate>
+            <div class="modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <h3 class="modal-title" id="forgotTitle">Reset your password</h3>
+            <p class="modal-desc">Enter the email you signed up with and we'll send you a 6-digit code.</p>
+            <div class="alert" id="step1Alert" role="alert"></div>
+            <div class="field">
+                <label class="label" for="resetEmail">Email</label>
+                <input class="input" type="email" id="resetEmail" placeholder="you@example.com" autocomplete="email"/>
             </div>
-            <button class="submit-btn" id="sendOtpBtn" onclick="sendOtp()">Send OTP →</button>
-        </div>
+            <button type="submit" class="btn btn-primary btn-block" id="sendOtpBtn">Send code</button>
+        </form>
 
-        <!-- STEP 2: OTP Entry -->
-        <div class="modal-step" id="step2">
-            <button class="step-back" onclick="goToStep(1)">← Back</button>
-            <h3 class="modal-title">Enter OTP</h3>
-            <p class="modal-desc" id="otpDesc">We sent a 6-digit OTP to your email. It expires in 10 minutes.</p>
-            <div class="alert" id="step2Alert"></div>
-            
-            <div class="otp-inputs">
-                <input type="text" maxlength="1" class="otp-digit" id="d1" oninput="otpInput(this, null, 'd2')" onkeydown="otpBack(event, this, null)" autocomplete="off" inputmode="numeric"/>
-                <input type="text" maxlength="1" class="otp-digit" id="d2" oninput="otpInput(this, 'd1', 'd3')" onkeydown="otpBack(event, this, 'd1')" autocomplete="off" inputmode="numeric"/>
-                <input type="text" maxlength="1" class="otp-digit" id="d3" oninput="otpInput(this, 'd2', 'd4')" onkeydown="otpBack(event, this, 'd2')" autocomplete="off" inputmode="numeric"/>
-                <input type="text" maxlength="1" class="otp-digit" id="d4" oninput="otpInput(this, 'd3', 'd5')" onkeydown="otpBack(event, this, 'd3')" autocomplete="off" inputmode="numeric"/>
-                <input type="text" maxlength="1" class="otp-digit" id="d5" oninput="otpInput(this, 'd4', 'd6')" onkeydown="otpBack(event, this, 'd4')" autocomplete="off" inputmode="numeric"/>
-                <input type="text" maxlength="1" class="otp-digit" id="d6" oninput="otpInput(this, 'd5', null)"  onkeydown="otpBack(event, this, 'd5')" autocomplete="off" inputmode="numeric"/>
+        <!-- Step 2: code -->
+        <form class="modal-step" id="step2" novalidate>
+            <button type="button" class="step-back" onclick="goToStep(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</button>
+            <h3 class="modal-title">Check your email</h3>
+            <p class="modal-desc" id="otpDesc">We sent a 6-digit code to your email. It expires in 10 minutes.</p>
+            <div class="alert" id="step2Alert" role="alert"></div>
+            <div class="otp-inputs" role="group" aria-label="6-digit code">
+                <input type="text" maxlength="1" class="otp-digit" id="d1" oninput="otpInput(this, null, 'd2')" onkeydown="otpBack(event, this, null)" autocomplete="one-time-code" inputmode="numeric" aria-label="Digit 1"/>
+                <input type="text" maxlength="1" class="otp-digit" id="d2" oninput="otpInput(this, 'd1', 'd3')" onkeydown="otpBack(event, this, 'd1')" autocomplete="off" inputmode="numeric" aria-label="Digit 2"/>
+                <input type="text" maxlength="1" class="otp-digit" id="d3" oninput="otpInput(this, 'd2', 'd4')" onkeydown="otpBack(event, this, 'd2')" autocomplete="off" inputmode="numeric" aria-label="Digit 3"/>
+                <input type="text" maxlength="1" class="otp-digit" id="d4" oninput="otpInput(this, 'd3', 'd5')" onkeydown="otpBack(event, this, 'd3')" autocomplete="off" inputmode="numeric" aria-label="Digit 4"/>
+                <input type="text" maxlength="1" class="otp-digit" id="d5" oninput="otpInput(this, 'd4', 'd6')" onkeydown="otpBack(event, this, 'd4')" autocomplete="off" inputmode="numeric" aria-label="Digit 5"/>
+                <input type="text" maxlength="1" class="otp-digit" id="d6" oninput="otpInput(this, 'd5', null)" onkeydown="otpBack(event, this, 'd5')" autocomplete="off" inputmode="numeric" aria-label="Digit 6"/>
             </div>
-            
-            <button class="submit-btn" id="verifyOtpBtn" onclick="verifyOtp()">Verify OTP →</button>
-            <div class="resend-row">Didn't receive it? <span onclick="resendOtp()">Resend OTP</span></div>
-        </div>
+            <button type="submit" class="btn btn-primary btn-block" id="verifyOtpBtn">Verify code</button>
+            <p class="resend-row">Didn't get it? <button type="button" class="text-btn" onclick="resendOtp()">Send a new code</button></p>
+        </form>
 
-        <!-- STEP 3: Reset Password -->
-        <div class="modal-step" id="step3">
-            <button class="step-back" onclick="goToStep(2)">← Back</button>
-            <h3 class="modal-title">Set New Password</h3>
-            <p class="modal-desc">Create a strong, secure new password for your account.</p>
-            <div class="alert" id="step3Alert"></div>
-            
-            <div class="form-group">
-                <label for="newPassword">New Password</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                    </span>
-                    <input type="password" id="newPassword" class="with-toggle" placeholder="Enter new password" oninput="handlePasswordStrength(this.value)"/>
-                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('newPassword', this)" aria-label="Toggle password visibility">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                    </button>
-                </div>
-            </div>
+        <!-- Step 3: new password -->
+        <form class="modal-step" id="step3" novalidate>
+            <button type="button" class="step-back" onclick="goToStep(2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</button>
+            <h3 class="modal-title">Choose a new password</h3>
+            <p class="modal-desc">Use at least 8 characters with a mix of letters, numbers and symbols.</p>
+            <div class="alert" id="step3Alert" role="alert"></div>
 
-            <!-- Real-time Password Strength Meter -->
-            <div class="strength-container" id="strengthMeter">
-                <div class="strength-header">
-                    <span class="strength-header-label">Password Strength:</span>
-                    <span class="strength-text" id="strengthText">Enter password</span>
+            <div class="field">
+                <label class="label" for="newPassword">New password</label>
+                <div class="input-wrap">
+                    <input class="input has-toggle" type="password" id="newPassword" placeholder="New password" autocomplete="new-password" oninput="handlePasswordStrength(this.value)"/>
+                    <button type="button" class="input-toggle" onclick="togglePasswordVisibility('newPassword', this)" aria-label="Show password"></button>
                 </div>
-                <div class="strength-bars">
-                    <div class="strength-bar-segment" id="seg1"></div>
-                    <div class="strength-bar-segment" id="seg2"></div>
-                    <div class="strength-bar-segment" id="seg3"></div>
-                    <div class="strength-bar-segment" id="seg4"></div>
+                <div class="strength" id="strengthMeter" data-level="0">
+                    <div class="strength-track"><span></span><span></span><span></span><span></span></div>
+                    <div class="strength-meta"><span>Password strength</span><span class="strength-label" id="strengthText"></span></div>
                 </div>
-                <ul class="strength-criteria">
-                    <li id="crit-length" class="criterion">
-                        <span class="crit-icon">○</span>
-                        <span>At least 8 characters</span>
-                    </li>
-                    <li id="crit-upper" class="criterion">
-                        <span class="crit-icon">○</span>
-                        <span>At least one uppercase letter (A-Z)</span>
-                    </li>
-                    <li id="crit-lower" class="criterion">
-                        <span class="crit-icon">○</span>
-                        <span>At least one lowercase letter (a-z)</span>
-                    </li>
-                    <li id="crit-number" class="criterion">
-                        <span class="crit-icon">○</span>
-                        <span>At least one number (0-9)</span>
-                    </li>
-                    <li id="crit-special" class="criterion">
-                        <span class="crit-icon">○</span>
-                        <span>At least one special character (!@#$%^&*...)</span>
-                    </li>
+                <ul class="checklist">
+                    <li id="crit-length">8+ characters</li>
+                    <li id="crit-upper">Uppercase letter</li>
+                    <li id="crit-lower">Lowercase letter</li>
+                    <li id="crit-number">Number</li>
+                    <li id="crit-special">Symbol</li>
                 </ul>
             </div>
 
-            <div class="form-group">
-                <label for="confirmNewPassword">Confirm Password</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                    </span>
-                    <input type="password" id="confirmNewPassword" class="with-toggle" placeholder="Repeat new password"/>
-                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('confirmNewPassword', this)" aria-label="Toggle password visibility">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                    </button>
+            <div class="field">
+                <label class="label" for="confirmNewPassword">Confirm password</label>
+                <div class="input-wrap">
+                    <input class="input has-toggle" type="password" id="confirmNewPassword" placeholder="Repeat new password" autocomplete="new-password"/>
+                    <button type="button" class="input-toggle" onclick="togglePasswordVisibility('confirmNewPassword', this)" aria-label="Show password"></button>
                 </div>
             </div>
 
-            <button class="submit-btn" id="resetBtn" onclick="resetPassword()">Reset Password →</button>
-        </div>
+            <button type="submit" class="btn btn-primary btn-block" id="resetBtn">Reset password</button>
+        </form>
 
-        <!-- STEP 4: Success -->
-        <div class="modal-step" id="step4">
-            <div class="success-icon-wrap">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </div>
-            <h3 class="modal-title" style="text-align:center">Password Reset!</h3>
-            <p class="modal-desc" style="text-align:center">Your password has been changed successfully. You can now log in with your new credentials.</p>
-            <button class="submit-btn" onclick="closeForgot()">Go to Login →</button>
+        <!-- Step 4: done -->
+        <div class="modal-step" id="step4" style="text-align:center">
+            <div class="modal-icon success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+            <h3 class="modal-title">Password updated</h3>
+            <p class="modal-desc">You can now sign in with your new password.</p>
+            <button type="button" class="btn btn-primary btn-block" onclick="closeForgot()">Back to sign in</button>
         </div>
     </div>
 </div>
 
-<!-- THEME SWITCHER FLOAT BUTTON -->
-<button class="theme-float" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
-    <span data-theme-icon></span>
-</button>
-
+<script src="/static/bg.js"></script>
 <script>
-    /* -------------------------------------------------------------
-       LOGIN LOGIC
-    ------------------------------------------------------------- */
+    /* ── Helpers ───────────────────────────────────── */
+    const EYE     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>';
+    document.querySelectorAll('.input-toggle').forEach(b => b.innerHTML = EYE);
+
+    function togglePasswordVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const show  = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.innerHTML = show ? EYE_OFF : EYE;
+        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    }
+
+    // Shows a spinner while a request is in flight and restores the label after.
+    function setBusy(btn, busy, label) {
+        if (busy) {
+            btn.dataset.label = btn.textContent;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner"></span>${label}`;
+        } else {
+            btn.disabled = false;
+            btn.textContent = btn.dataset.label || label;
+        }
+    }
+
+    function showAlert(message, type) {
+        const box = document.getElementById('alertBox');
+        box.textContent = message;
+        box.className   = `alert ${type}`;
+    }
+
+    function showModalAlert(id, message, type) {
+        const el = document.getElementById(id);
+        el.textContent = message;
+        el.className = 'alert ' + type;
+    }
+
+    function clearAlert(id) {
+        const el = document.getElementById(id);
+        el.textContent = '';
+        el.className = 'alert';
+    }
+
+    /* ── Sign in ───────────────────────────────────── */
+    document.getElementById('loginForm').addEventListener('submit', e => { e.preventDefault(); handleLogin(); });
+
     async function handleLogin() {
         const email    = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value.trim();
         const btn      = document.getElementById('loginBtn');
 
-        if (!email || !password) {
-            return showAlert('Email and password are required.', 'error');
-        }
+        if (!email || !password) return showAlert('Enter your email and password.', 'error');
 
-        btn.disabled    = true;
-        btn.innerHTML   = '<span>Signing in...</span>';
-
+        setBusy(btn, true, 'Signing in…');
         try {
             const res  = await fetch('/api/login', {
                 method:  'POST',
@@ -1198,296 +239,158 @@
             const data = await res.json();
 
             if (!res.ok) {
-                showAlert(data.error || 'Login failed.', 'error');
-                btn.disabled  = false;
-                btn.innerHTML = '<span>Sign In</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
-                return;
+                showAlert(data.error || 'Sign in failed.', 'error');
+                return setBusy(btn, false);
             }
-
-            showAlert(`✅ Welcome back, ${data.username}! Redirecting...`, 'success');
-            setTimeout(() => { window.location.href = data.redirect || '/chat'; }, 1200);
-
+            window.location.href = data.redirect || '/chat';
         } catch (e) {
-            showAlert('Server error. Please try again.', 'error');
-            btn.disabled  = false;
-            btn.innerHTML = '<span>Sign In</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+            showAlert('Could not reach the server. Please try again.', 'error');
+            setBusy(btn, false);
         }
     }
 
-    function showAlert(message, type) {
-        const box = document.getElementById('alertBox');
-        box.textContent   = message;
-        box.className     = `alert ${type}`;
-        box.style.display = 'block';
-    }
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            const modal = document.getElementById('forgotModal');
-            if (modal && modal.classList.contains('show')) {
-                const active = document.querySelector('.modal-step.active');
-                if (active) {
-                    if (active.id === 'step1') sendOtp();
-                    else if (active.id === 'step2') verifyOtp();
-                    else if (active.id === 'step3') resetPassword();
-                    else if (active.id === 'step4') closeForgot();
-                }
-                return;
-            }
-            handleLogin();
-        }
-    });
-
-    /* -------------------------------------------------------------
-       PASSWORD VISIBILITY TOGGLE HELPER
-    ------------------------------------------------------------- */
-    function togglePasswordVisibility(inputId, btn) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
-        const isPassword = input.type === 'password';
-        input.type = isPassword ? 'text' : 'password';
-        btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-        btn.innerHTML = isPassword ? getEyeOffIcon() : getEyeIcon();
-    }
-
-    function getEyeIcon() {
-        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
-    }
-
-    function getEyeOffIcon() {
-        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
-    }
-
-    /* -------------------------------------------------------------
-       REAL-TIME PASSWORD STRENGTH CHECKER
-    ------------------------------------------------------------- */
+    /* ── Password strength ─────────────────────────── */
     function handlePasswordStrength(pass) {
-        const lengthValid  = pass.length >= 8;
-        const upperValid   = /[A-Z]/.test(pass);
-        const lowerValid   = /[a-z]/.test(pass);
-        const numberValid  = /[0-9]/.test(pass);
-        const specialValid = /[^A-Za-z0-9]/.test(pass);
+        const checks = {
+            'crit-length':  pass.length >= 8,
+            'crit-upper':   /[A-Z]/.test(pass),
+            'crit-lower':   /[a-z]/.test(pass),
+            'crit-number':  /[0-9]/.test(pass),
+            'crit-special': /[^A-Za-z0-9]/.test(pass),
+        };
+        for (const [id, ok] of Object.entries(checks)) document.getElementById(id).classList.toggle('met', ok);
 
-        function updateCrit(id, isValid) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.classList.toggle('valid', isValid);
-            const icon = el.querySelector('.crit-icon');
-            if (icon) icon.textContent = isValid ? '✓' : '○';
-        }
-
-        updateCrit('crit-length', lengthValid);
-        updateCrit('crit-upper', upperValid);
-        updateCrit('crit-lower', lowerValid);
-        updateCrit('crit-number', numberValid);
-        updateCrit('crit-special', specialValid);
-
-        const score = [lengthValid, upperValid, lowerValid, numberValid, specialValid].filter(Boolean).length;
-        
-        const textEl = document.getElementById('strengthText');
-        const segs = [
-            document.getElementById('seg1'),
-            document.getElementById('seg2'),
-            document.getElementById('seg3'),
-            document.getElementById('seg4')
-        ];
-
-        segs.forEach(s => {
-            if (s) s.className = 'strength-bar-segment';
-        });
-
-        if (!pass) {
-            if (textEl) {
-                textEl.textContent = 'Enter password';
-                textEl.className = 'strength-text';
-            }
-            return;
-        }
-
-        if (score <= 2) {
-            if (textEl) {
-                textEl.textContent = 'Weak';
-                textEl.className = 'strength-text weak';
-            }
-            if (segs[0]) segs[0].classList.add('weak');
-        } else if (score === 3) {
-            if (textEl) {
-                textEl.textContent = 'Fair';
-                textEl.className = 'strength-text fair';
-            }
-            if (segs[0]) segs[0].classList.add('fair');
-            if (segs[1]) segs[1].classList.add('fair');
-        } else if (score === 4) {
-            if (textEl) {
-                textEl.textContent = 'Good';
-                textEl.className = 'strength-text good';
-            }
-            if (segs[0]) segs[0].classList.add('good');
-            if (segs[1]) segs[1].classList.add('good');
-            if (segs[2]) segs[2].classList.add('good');
-        } else {
-            if (textEl) {
-                textEl.textContent = 'Strong';
-                textEl.className = 'strength-text strong';
-            }
-            segs.forEach(s => { if (s) s.classList.add('strong'); });
-        }
+        const score = Object.values(checks).filter(Boolean).length;
+        const level = !pass ? 0 : score <= 2 ? 1 : score === 3 ? 2 : score === 4 ? 3 : 4;
+        document.getElementById('strengthMeter').dataset.level = level;
+        document.getElementById('strengthText').textContent = ['', 'Weak', 'Fair', 'Good', 'Strong'][level];
     }
 
-    /* -------------------------------------------------------------
-       FORGOT PASSWORD MODAL LOGIC
-    ------------------------------------------------------------- */
+    /* ── Forgot password modal ─────────────────────── */
     let resetEmailGlobal = '';
     let verifiedOtpGlobal = '';
+    const OTP_IDS = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6'];
 
     function openForgot() {
         goToStep(1);
+        const loginEmail = document.getElementById('email').value.trim();
+        if (loginEmail) document.getElementById('resetEmail').value = loginEmail;
         document.getElementById('forgotModal').classList.add('show');
         setTimeout(() => document.getElementById('resetEmail').focus(), 100);
     }
 
     function closeForgot() {
         document.getElementById('forgotModal').classList.remove('show');
-        
-        ['resetEmail','newPassword','confirmNewPassword'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = '';
-        });
-        ['d1','d2','d3','d4','d5','d6'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) { el.value = ''; el.classList.remove('filled'); }
-        });
-        clearAlert('step1Alert');
-        clearAlert('step2Alert');
-        clearAlert('step3Alert');
+        ['resetEmail', 'newPassword', 'confirmNewPassword'].forEach(id => document.getElementById(id).value = '');
+        clearOtp();
+        ['step1Alert', 'step2Alert', 'step3Alert'].forEach(clearAlert);
         handlePasswordStrength('');
     }
 
     function goToStep(n) {
-        for (let i = 1; i <= 4; i++) {
-            const step = document.getElementById('step' + i);
-            if (step) step.classList.remove('active');
-        }
-        const target = document.getElementById('step' + n);
-        if (target) target.classList.add('active');
+        for (let i = 1; i <= 4; i++) document.getElementById('step' + i).classList.toggle('active', i === n);
     }
 
-    /* -------------------------------------------------------------
-       OTP INPUT HANDLING
-    ------------------------------------------------------------- */
+    document.getElementById('forgotModal').addEventListener('click', function (e) {
+        if (e.target === this) closeForgot();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('forgotModal').classList.contains('show')) closeForgot();
+    });
+    document.getElementById('step1').addEventListener('submit', e => { e.preventDefault(); sendOtp(); });
+    document.getElementById('step2').addEventListener('submit', e => { e.preventDefault(); verifyOtp(); });
+    document.getElementById('step3').addEventListener('submit', e => { e.preventDefault(); resetPassword(); });
+
+    /* ── OTP inputs ────────────────────────────────── */
     function otpInput(el, prevId, nextId) {
         el.value = el.value.replace(/[^0-9]/g, '');
         el.classList.toggle('filled', el.value !== '');
-        if (el.value && nextId) {
-            document.getElementById(nextId).focus();
-        }
-        
-        const all = ['d1','d2','d3','d4','d5','d6'].map(id => document.getElementById(id).value);
-        if (all.every(v => v)) verifyOtp();
+        if (el.value && nextId) document.getElementById(nextId).focus();
+        if (OTP_IDS.every(id => document.getElementById(id).value)) verifyOtp();
     }
 
     function otpBack(event, el, prevId) {
-        if (event.key === 'Backspace' && !el.value && prevId) {
-            document.getElementById(prevId).focus();
-        }
+        if (event.key === 'Backspace' && !el.value && prevId) document.getElementById(prevId).focus();
     }
 
     function getOtpValue() {
-        return ['d1','d2','d3','d4','d5','d6'].map(id => document.getElementById(id).value).join('');
+        return OTP_IDS.map(id => document.getElementById(id).value).join('');
     }
 
-    // Support pasting 6-digit OTP
-    const otpContainer = document.querySelector('.otp-inputs');
-    if (otpContainer) {
-        otpContainer.addEventListener('paste', (e) => {
-            e.preventDefault();
-            const pasteData = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
-            if (!pasteData) return;
-            ['d1','d2','d3','d4','d5','d6'].forEach((id, idx) => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.value = pasteData[idx] || '';
-                    el.classList.toggle('filled', el.value !== '');
-                }
-            });
-            const focusIdx = Math.min(pasteData.length, 6);
-            const nextEl = document.getElementById('d' + (focusIdx === 6 ? 6 : focusIdx + 1));
-            if (nextEl) nextEl.focus();
-            if (pasteData.length === 6) verifyOtp();
+    function clearOtp() {
+        OTP_IDS.forEach(id => {
+            const el = document.getElementById(id);
+            el.value = ''; el.classList.remove('filled');
         });
     }
 
-    /* -------------------------------------------------------------
-       API CALLS: FORGOT PASSWORD FLOW
-    ------------------------------------------------------------- */
+    document.querySelector('.otp-inputs').addEventListener('paste', e => {
+        e.preventDefault();
+        const digits = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+        if (!digits) return;
+        OTP_IDS.forEach((id, i) => {
+            const el = document.getElementById(id);
+            el.value = digits[i] || '';
+            el.classList.toggle('filled', el.value !== '');
+        });
+        document.getElementById('d' + Math.min(digits.length + 1, 6)).focus();
+        if (digits.length === 6) verifyOtp();
+    });
+
+    /* ── API calls ─────────────────────────────────── */
     async function sendOtp() {
         const email = document.getElementById('resetEmail').value.trim();
         const btn   = document.getElementById('sendOtpBtn');
         clearAlert('step1Alert');
 
         if (!email || !email.includes('@')) {
-            return showModalAlert('step1Alert', 'Please enter a valid email address.', 'error');
+            return showModalAlert('step1Alert', 'Enter a valid email address.', 'error');
         }
 
-        btn.disabled = true;
-        btn.textContent = 'Sending...';
-
+        setBusy(btn, true, 'Sending…');
         try {
-            const res  = await fetch('/api/forgot-password', {
+            await fetch('/api/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
-            const data = await res.json();
-
             resetEmailGlobal = email;
             document.getElementById('otpDesc').textContent =
-                `We sent a 6-digit OTP to ${email}. It expires in 10 minutes.`;
+                `If ${email} has an account, a 6-digit code is on its way. It expires in 10 minutes.`;
             goToStep(2);
             setTimeout(() => document.getElementById('d1').focus(), 100);
-
-        } catch(e) {
-            showModalAlert('step1Alert', 'Server error. Please try again.', 'error');
+        } catch (e) {
+            showModalAlert('step1Alert', 'Could not reach the server. Please try again.', 'error');
         }
-
-        btn.disabled = false;
-        btn.textContent = 'Send OTP →';
+        setBusy(btn, false);
     }
 
     async function resendOtp() {
         if (!resetEmailGlobal) return;
         clearAlert('step2Alert');
-        showModalAlert('step2Alert', 'Sending new OTP...', 'success');
         try {
             await fetch('/api/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: resetEmailGlobal })
             });
-            showModalAlert('step2Alert', 'New OTP sent! Check your email.', 'success');
-        } catch(e) {
-            showModalAlert('step2Alert', 'Failed to resend. Try again.', 'error');
+            showModalAlert('step2Alert', 'A new code has been sent. Check your inbox.', 'success');
+        } catch (e) {
+            showModalAlert('step2Alert', 'Could not resend the code. Please try again.', 'error');
         }
-        
-        ['d1','d2','d3','d4','d5','d6'].forEach(id => {
-            const el = document.getElementById(id);
-            el.value = ''; el.classList.remove('filled');
-        });
+        clearOtp();
         document.getElementById('d1').focus();
     }
 
     async function verifyOtp() {
         const otp = getOtpValue();
         const btn = document.getElementById('verifyOtpBtn');
+        if (btn.disabled) return;
         clearAlert('step2Alert');
 
-        if (otp.length < 6) {
-            return showModalAlert('step2Alert', 'Please enter all 6 digits.', 'error');
-        }
+        if (otp.length < 6) return showModalAlert('step2Alert', 'Enter all 6 digits.', 'error');
 
-        btn.disabled = true;
-        btn.textContent = 'Verifying...';
-
+        setBusy(btn, true, 'Verifying…');
         try {
             const res  = await fetch('/api/verify-otp', {
                 method: 'POST',
@@ -1495,97 +398,51 @@
                 body: JSON.stringify({ email: resetEmailGlobal, otp })
             });
             const data = await res.json();
+            setBusy(btn, false);
 
-            if (!res.ok) {
-                showModalAlert('step2Alert', data.error || 'Invalid OTP.', 'error');
-                btn.disabled = false;
-                btn.textContent = 'Verify OTP →';
-                return;
-            }
+            if (!res.ok) return showModalAlert('step2Alert', data.error || 'That code is not valid.', 'error');
 
             verifiedOtpGlobal = otp;
             goToStep(3);
             setTimeout(() => document.getElementById('newPassword').focus(), 100);
-
-        } catch(e) {
-            showModalAlert('step2Alert', 'Server error. Try again.', 'error');
-            btn.disabled = false;
-            btn.textContent = 'Verify OTP →';
+        } catch (e) {
+            showModalAlert('step2Alert', 'Could not reach the server. Please try again.', 'error');
+            setBusy(btn, false);
         }
     }
 
     async function resetPassword() {
-        const newPass  = document.getElementById('newPassword').value;
-        const confirm  = document.getElementById('confirmNewPassword').value;
-        const btn      = document.getElementById('resetBtn');
+        const newPass = document.getElementById('newPassword').value;
+        const confirm = document.getElementById('confirmNewPassword').value;
+        const btn     = document.getElementById('resetBtn');
         clearAlert('step3Alert');
 
-        if (!newPass || !confirm) {
-            return showModalAlert('step3Alert', 'Both fields are required.', 'error');
-        }
-        if (newPass !== confirm) {
-            return showModalAlert('step3Alert', 'Passwords do not match.', 'error');
-        }
+        if (!newPass || !confirm) return showModalAlert('step3Alert', 'Fill in both password fields.', 'error');
+        if (newPass !== confirm)  return showModalAlert('step3Alert', 'Passwords do not match.', 'error');
 
-        // Validate all 5 security requirements
-        const hasLength  = newPass.length >= 8;
-        const hasUpper   = /[A-Z]/.test(newPass);
-        const hasLower   = /[a-z]/.test(newPass);
-        const hasNumber  = /[0-9]/.test(newPass);
-        const hasSpecial = /[^A-Za-z0-9]/.test(newPass);
+        const strong = newPass.length >= 8 && /[A-Z]/.test(newPass) && /[a-z]/.test(newPass)
+                    && /[0-9]/.test(newPass) && /[^A-Za-z0-9]/.test(newPass);
+        if (!strong) return showModalAlert('step3Alert', 'Your password must meet all of the requirements above.', 'error');
 
-        if (!hasLength || !hasUpper || !hasLower || !hasNumber || !hasSpecial) {
-            return showModalAlert('step3Alert', 'Password must satisfy all 5 requirements (8+ chars, uppercase, lowercase, number, special character).', 'error');
-        }
-
-        btn.disabled = true;
-        btn.textContent = 'Resetting...';
-
+        setBusy(btn, true, 'Saving…');
         try {
             const res  = await fetch('/api/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email:        resetEmailGlobal,
-                    otp:          verifiedOtpGlobal,
-                    new_password: newPass
-                })
+                body: JSON.stringify({ email: resetEmailGlobal, otp: verifiedOtpGlobal, new_password: newPass })
             });
             const data = await res.json();
+            setBusy(btn, false);
 
-            if (!res.ok) {
-                showModalAlert('step3Alert', data.error || 'Reset failed.', 'error');
-                btn.disabled = false;
-                btn.textContent = 'Reset Password →';
-                return;
-            }
-
+            if (!res.ok) return showModalAlert('step3Alert', data.error || 'Could not reset your password.', 'error');
             goToStep(4);
-
-        } catch(e) {
-            showModalAlert('step3Alert', 'Server error. Try again.', 'error');
-            btn.disabled = false;
-            btn.textContent = 'Reset Password →';
+        } catch (e) {
+            showModalAlert('step3Alert', 'Could not reach the server. Please try again.', 'error');
+            setBusy(btn, false);
         }
     }
 
-    function showModalAlert(id, message, type) {
-        const el = document.getElementById(id);
-        el.textContent = message;
-        el.className = 'alert ' + type;
-        el.style.display = 'block';
-    }
-
-    function clearAlert(id) {
-        const el = document.getElementById(id);
-        el.textContent = '';
-        el.style.display = 'none';
-    }
-
-    // Close modal on backdrop click
-    document.getElementById('forgotModal').addEventListener('click', function(e) {
-        if (e.target === this) closeForgot();
-    });
+    {% if show_forgot %}openForgot();{% endif %}
 </script>
 </body>
 </html>

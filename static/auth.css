@@ -1,0 +1,261 @@
+/* =====================================================
+   DSA Assistant — sign in / sign up / password reset
+   Requires base.css and bg.js.
+   ===================================================== */
+
+html, body { min-height: 100%; }
+
+.auth {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+}
+
+/* ── Form column ────────────────────────────────── */
+.auth-main { display: flex; flex-direction: column; padding: 20px 32px; }
+.auth-top { display: flex; align-items: center; justify-content: space-between; animation: fade-up .5s var(--ease) both; }
+.auth-form-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 0; }
+.auth-form {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    padding: 32px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: var(--surface-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-lg);
+    animation: form-in .7s var(--ease) both;
+}
+@keyframes form-in { from { opacity: 0; transform: translateY(16px) scale(.98); } }
+/* fields cascade in */
+.auth-form > * { animation: fade-up .55s var(--ease) both; }
+.auth-form > *:nth-child(1) { animation-delay: .1s; }
+.auth-form > *:nth-child(2) { animation-delay: .15s; }
+.auth-form > *:nth-child(3) { animation-delay: .2s; }
+.auth-form > *:nth-child(4) { animation-delay: .25s; }
+.auth-form > *:nth-child(5) { animation-delay: .3s; }
+.auth-form > *:nth-child(6) { animation-delay: .35s; }
+.auth-form > *:nth-child(7) { animation-delay: .4s; }
+.auth-form > *:nth-child(8) { animation-delay: .45s; }
+.auth-form > *:nth-child(9) { animation-delay: .5s; }
+.auth-form h1 { font-size: 28px; font-weight: 700; letter-spacing: -.03em; line-height: 1.2; }
+.auth-sub { color: var(--text-2); margin: 8px 0 26px; font-size: 15px; }
+.auth-form .btn-primary { margin-top: 8px; height: 46px; font-size: 15px; }
+.auth-switch { margin-top: 22px; text-align: center; font-size: 14px; color: var(--text-2); }
+.auth-foot { font-size: 12.5px; color: var(--text-3); text-align: center; }
+
+.text-btn { font-size: 13px; font-weight: 550; color: var(--accent-text); }
+.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── Brand column ───────────────────────────────── */
+.auth-aside {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 40px;
+    margin: 12px 12px 12px 0;
+    border-radius: 28px;
+    padding: 56px clamp(32px, 5vw, 72px);
+    color: #fff;
+    background: linear-gradient(135deg, var(--grad-from), var(--grad-to), var(--grad-from));
+    background-size: 200% 200%;
+    animation: gradient-pan 12s ease-in-out infinite;
+}
+@keyframes gradient-pan { 50% { background-position: 100% 50%; } }
+/* drifting light blobs + grid */
+.auth-aside::before, .auth-aside::after { content: ''; position: absolute; pointer-events: none; }
+.auth-aside::before {
+    width: 520px; height: 520px; right: -160px; top: -180px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, .22), transparent);
+    animation: blob 14s ease-in-out infinite alternate;
+}
+.auth-aside::after {
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, .07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .07) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at 70% 30%, #000 10%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 70% 30%, #000 10%, transparent 70%);
+    animation: grid-move 24s linear infinite;
+}
+@keyframes blob { to { transform: translate(-120px, 160px) scale(1.2); } }
+@keyframes grid-move { to { background-position: 44px 44px, 44px 44px; } }
+.auth-aside > * { position: relative; z-index: 1; }
+.aside-title {
+    font-size: clamp(26px, 2.6vw, 36px);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    line-height: 1.15;
+    max-width: 470px;
+    animation: fade-up .8s .2s var(--ease) both;
+}
+.aside-text { margin-top: 12px; max-width: 440px; color: rgba(255, 255, 255, .82); font-size: 15.5px; animation: fade-up .8s .3s var(--ease) both; }
+
+.preview-card {
+    max-width: 470px;
+    padding: 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .2);
+    box-shadow: 0 30px 60px -20px rgba(10, 6, 40, .55);
+    font-size: 14px;
+    animation: fade-up .8s .4s var(--ease) both, float-y 7s 1.2s ease-in-out infinite;
+}
+@keyframes float-y { 50% { translate: 0 -8px; } }
+.preview-q {
+    margin-left: auto;
+    width: fit-content;
+    max-width: 88%;
+    padding: 8px 14px;
+    border-radius: 14px 14px 4px 14px;
+    background: rgba(255, 255, 255, .95);
+    color: #18181b;
+    font-weight: 500;
+    animation: type-in 1.2s steps(30) .9s both;
+}
+@keyframes type-in { from { clip-path: inset(0 100% 0 0 round 14px); } to { clip-path: inset(0 0 0 0 round 14px); } }
+.preview-a { display: flex; gap: 10px; margin-top: 14px; }
+.preview-a .brand-mark { width: 26px; height: 26px; border-radius: 7px; background: #fff; color: var(--grad-from); box-shadow: none; }
+.preview-a .brand-mark svg { width: 15px; height: 15px; }
+.preview-a > * { animation: fade-up .6s 2.3s var(--ease) both; }
+.preview-a p { color: rgba(255, 255, 255, .93); line-height: 1.6; }
+.preview-dots { display: flex; gap: 4px; height: 0; overflow: hidden; animation: dots 1.2s 1.9s both; }
+.preview-dots i { width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: bounce 1s infinite; }
+.preview-dots i:nth-child(2) { animation-delay: .15s; } .preview-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes dots { 0%, 100% { height: 0; margin-top: 0; } 10%, 85% { height: 14px; margin-top: 12px; } }
+@keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-4px); opacity: 1; } }
+.preview-source {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 10px; padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .16);
+    font-size: 12px; color: rgba(255, 255, 255, .92);
+}
+.preview-source svg { width: 12px; height: 12px; }
+
+.aside-points { list-style: none; padding: 0; display: grid; gap: 12px; max-width: 460px; }
+.aside-points li { display: flex; gap: 12px; align-items: flex-start; color: rgba(255, 255, 255, .9); font-size: 14.5px; animation: fade-up .6s var(--ease) both; }
+.aside-points li:nth-child(1) { animation-delay: .6s; }
+.aside-points li:nth-child(2) { animation-delay: .7s; }
+.aside-points li:nth-child(3) { animation-delay: .8s; }
+.aside-points svg { width: 20px; height: 20px; padding: 3px; border-radius: 50%; background: rgba(255, 255, 255, .18); margin-top: 1px; }
+
+/* ── Password strength ──────────────────────────── */
+.strength { margin-top: 10px; }
+.strength-track { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.strength-track span { height: 4px; border-radius: 999px; background: var(--surface-3); transition: background .3s var(--ease), transform .3s var(--ease-spring); }
+.strength-meta { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--text-3); }
+.strength-label { font-weight: 600; }
+.strength[data-level="1"] .strength-track span:nth-child(-n+1) { background: var(--danger); }
+.strength[data-level="2"] .strength-track span:nth-child(-n+2) { background: #f59e0b; }
+.strength[data-level="3"] .strength-track span:nth-child(-n+3) { background: #eab308; }
+.strength[data-level="4"] .strength-track span { background: #22c55e; }
+.strength[data-level="1"] .strength-label { color: var(--danger); }
+.strength[data-level="2"] .strength-label,
+.strength[data-level="3"] .strength-label { color: var(--warning); }
+.strength[data-level="4"] .strength-label { color: var(--success); }
+
+.checklist { list-style: none; padding: 0; margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+.checklist li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-3); transition: color .2s var(--ease); }
+.checklist li::before {
+    content: '';
+    width: 14px; height: 14px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-strong);
+    transition: all .3s var(--ease-spring);
+}
+.checklist li.met { color: var(--text-2); }
+.checklist li.met::before {
+    border-color: #16a34a;
+    transform: scale(1.1);
+    background: #16a34a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center / 9px no-repeat;
+}
+
+.field-hint { font-size: 12.5px; margin-top: 2px; display: none; }
+.field-hint.match { display: block; color: var(--success); }
+.field-hint.mismatch { display: block; color: var(--danger); }
+
+/* ── Forgot-password modal ──────────────────────── */
+.modal-overlay {
+    position: fixed; inset: 0; z-index: 50;
+    display: grid; place-items: center;
+    padding: 16px;
+    background: rgba(9, 9, 11, .5);
+    backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s var(--ease);
+}
+.modal-overlay.show { opacity: 1; pointer-events: auto; }
+.modal-box {
+    position: relative;
+    width: 100%; max-width: 420px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    padding: 28px;
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(14px) scale(.96);
+    transition: transform .4s var(--ease-spring);
+}
+.modal-overlay.show .modal-box { transform: none; }
+.modal-close { position: absolute; top: 14px; right: 14px; }
+.modal-step { display: none; }
+.modal-step.active { display: block; animation: step-in .35s var(--ease) both; }
+@keyframes step-in { from { opacity: 0; transform: translateX(16px); } }
+.modal-icon {
+    width: 46px; height: 46px; border-radius: 13px;
+    display: grid; place-items: center;
+    color: #fff;
+    background: linear-gradient(135deg, var(--grad-from), var(--grad-to));
+    margin-bottom: 16px;
+}
+.modal-icon svg { width: 21px; height: 21px; }
+.modal-icon.success { background: var(--success-soft); color: var(--success); margin: 4px auto 16px; animation: pop-in .6s var(--ease-spring) both; }
+@keyframes pop-in { from { transform: scale(.3); opacity: 0; } }
+.modal-title { font-size: 19px; font-weight: 650; letter-spacing: -.015em; }
+.modal-desc { color: var(--text-2); font-size: 14px; margin: 6px 0 20px; }
+.step-back { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 550; color: var(--text-2); margin-bottom: 14px; }
+.step-back:hover { color: var(--text); }
+.step-back svg { width: 15px; height: 15px; transition: transform .2s var(--ease); }
+.step-back:hover svg { transform: translateX(-3px); }
+
+.otp-inputs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 18px; }
+.otp-digit {
+    width: 100%;
+    aspect-ratio: 1 / 1.15;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    border-radius: 12px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    transition: border-color .2s var(--ease), box-shadow .2s var(--ease), transform .2s var(--ease-spring);
+}
+.otp-digit:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--ring); transform: translateY(-2px); }
+.otp-digit.filled { border-color: var(--accent); background: var(--accent-soft); animation: digit-pop .3s var(--ease-spring); }
+@keyframes digit-pop { 50% { transform: scale(1.08); } }
+.resend-row { margin-top: 14px; text-align: center; font-size: 13.5px; color: var(--text-2); }
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 900px) {
+    .auth { grid-template-columns: 1fr; }
+    .auth-aside { display: none; }
+}
+@media (max-width: 480px) {
+    .auth-main { padding: 16px; }
+    .auth-form-wrap { align-items: flex-start; padding-top: 24px; }
+    .auth-form { padding: 24px 18px; border-radius: 20px; }
+    .checklist { grid-template-columns: 1fr; }
+    .modal-box { padding: 22px 18px; }
+    .otp-inputs { gap: 6px; }
+}

@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, session, redirect, url_for, render_template
+from auth import json_body
 from db.user_store import create_user, get_user_by_email
 from mailer import send_welcome_email
 import threading
@@ -22,7 +23,7 @@ def login_page():
 
 @auth_bp.route("/api/signup", methods=["POST"])
 def signup_api():
-    data     = request.get_json(force=True)
+    data     = json_body()
     username = data.get("username", "").strip()
     email    = data.get("email", "").strip()
     password = data.get("password", "").strip()
@@ -49,7 +50,7 @@ def signup_api():
     
     threading.Thread(
         target=send_welcome_email,
-        args=(email, username, password),
+        args=(email, username),
         daemon=True
     ).start()
 
@@ -68,7 +69,7 @@ def signup_api():
 
 @auth_bp.route("/api/login", methods=["POST"])
 def login_api():
-    data     = request.get_json(force=True)
+    data     = json_body()
     email    = data.get("email", "").strip()
     password = data.get("password", "").strip()
 
@@ -101,12 +102,20 @@ def logout():
 @auth_bp.route("/api/me", methods=["GET"])
 def me():
     """Returns current logged in user info."""
+    from db.user_store import get_user_by_id
+
     if "user_id" not in session:
         return jsonify({"error": "Not logged in"}), 401
+
+    user = get_user_by_id(session["user_id"])
+    if not user:
+        # Login cookie of an account that no longer exists.
+        session.clear()
+        return jsonify({"error": "Not logged in"}), 401
     return jsonify({
-        "id":       session["user_id"],
-        "username": session["username"],
-        "email":    session["email"],
+        "id":       user["id"],
+        "username": user["username"],
+        "email":    user["email"],
     })
 
 
@@ -124,7 +133,7 @@ def forgot_password_api():
     from mailer import send_otp_email
     from db.connection import get_connection
 
-    data  = request.get_json(force=True)
+    data  = json_body()
     email = data.get("email", "").strip().lower()
 
     if not email or "@" not in email:
@@ -149,11 +158,13 @@ def forgot_password_api():
 
     otp = create_otp(email)
 
-    threading.Thread(
-        target=send_otp_email,
-        args=(email, username, otp),
-        daemon=True
-    ).start()
+    # None = rate-limited; reply the same way so the limit doesn't reveal anything.
+    if otp:
+        threading.Thread(
+            target=send_otp_email,
+            args=(email, username, otp),
+            daemon=True
+        ).start()
 
     return jsonify({"message": "If that email is registered, an OTP has been sent."})
 
@@ -163,7 +174,7 @@ def verify_otp_api():
     """Step 2 — Verify OTP is correct before showing reset form."""
     from db.user_store import verify_otp
 
-    data  = request.get_json(force=True)
+    data  = json_body()
     email = data.get("email", "").strip().lower()
     otp   = data.get("otp",   "").strip()
 
@@ -183,7 +194,7 @@ def reset_password_api():
     """Step 3 — Set new password after OTP verified."""
     from db.user_store import reset_password
 
-    data         = request.get_json(force=True)
+    data         = json_body()
     email        = data.get("email",        "").strip().lower()
     otp          = data.get("otp",          "").strip()
     new_password = data.get("new_password", "").strip()

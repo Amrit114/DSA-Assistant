@@ -1,6 +1,3 @@
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
-sentence-transformers==2.7.0
 langchain
 langchain-core
 langchain-community
@@ -11,9 +8,12 @@ pgvector
 langchain-groq
 groq
 python-dotenv
-langchain-huggingface
 langchain-text-splitters
 flask 
 flask-cors
 pyspellchecker
 gunicorn
+onnxruntime
+tokenizers
+huggingface-hub
+numpy

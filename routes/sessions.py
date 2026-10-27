@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from auth import check_api_key
+from auth import json_body
 from database import get_connection
 
 sessions_bp = Blueprint("sessions", __name__)
@@ -7,9 +7,6 @@ sessions_bp = Blueprint("sessions", __name__)
 
 @sessions_bp.route("/api/sessions", methods=["GET"])
 def get_sessions():
-    if not check_api_key(request):
-        return jsonify({"error": "Unauthorized"}), 401
-
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Login required"}), 401
@@ -28,9 +25,6 @@ def get_sessions():
 
 @sessions_bp.route("/api/sessions/<session_id>", methods=["GET"])
 def get_session_messages(session_id):
-    if not check_api_key(request):
-        return jsonify({"error": "Unauthorized"}), 401
-
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Login required"}), 401
@@ -60,15 +54,17 @@ def get_session_messages(session_id):
 
 @sessions_bp.route("/api/sessions/<session_id>", methods=["DELETE"])
 def delete_session(session_id):
-    if not check_api_key(request):
-        return jsonify({"error": "Unauthorized"}), 401
-
     user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Login required"}), 401
+
     conn = get_connection()
     cur = conn.cursor()
 
+    # Only touch messages of a session this user owns.
     cur.execute(
-        "DELETE FROM messages WHERE session_id=%s", (session_id,)
+        "DELETE FROM messages WHERE session_id IN (SELECT id FROM sessions WHERE id=%s AND user_id=%s)",
+        (session_id, user_id)
     )
     cur.execute(
         "DELETE FROM sessions WHERE id=%s AND user_id=%s", (session_id, user_id)
@@ -80,9 +76,6 @@ def delete_session(session_id):
 
 @sessions_bp.route("/api/sessions", methods=["DELETE"])
 def delete_all_sessions():
-    if not check_api_key(request):
-        return jsonify({"error": "Unauthorized"}), 401
-
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Login required"}), 401
@@ -106,11 +99,11 @@ def delete_all_sessions():
 
 @sessions_bp.route("/api/sessions/<session_id>/title", methods=["PATCH"])
 def rename_session(session_id):
-    if not check_api_key(request):
-        return jsonify({"error": "Unauthorized"}), 401
-
     user_id = session.get("user_id")
-    data    = request.get_json(force=True)
+    if not user_id:
+        return jsonify({"error": "Login required"}), 401
+
+    data    = json_body()
     title   = data.get("title", "").strip()
 
     if not title:

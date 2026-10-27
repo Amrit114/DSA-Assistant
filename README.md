@@ -113,7 +113,7 @@ Dsa_RAG/
 ├── auth.py                 # API key middleware & session helpers
 ├── config.py               # Environment config (DB, Groq, embeddings)
 ├── database.py             # DB init — creates all tables on startup
-├── mailer.py               # SMTP email sender (welcome + OTP emails)
+├── mailer.py               # Welcome + OTP emails (Brevo HTTPS API, Gmail SMTP fallback)
 ├── main.py                 # Entry point shim
 │
 ├── routes/                 # Flask Blueprints
@@ -220,12 +220,14 @@ EMBEDDING_MODEL=all-MiniLM-L6-v2
 SECRET_KEY=your-very-secret-key-here
 PDF_DIR=data
 
-# Email (for OTP password reset)
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=your@gmail.com
-MAIL_PASSWORD=your-app-password
-MAIL_FROM=your@gmail.com
+# Email (welcome + OTP password reset)
+# Production / Render: Render's free plan blocks outbound SMTP, so use Brevo's HTTPS API.
+BREVO_API_KEY=xkeysib-xxxxxxxx
+MAIL_FROM=your@gmail.com          # must be a verified sender in Brevo
+APP_URL=https://your-app.onrender.com
+# Local fallback (used when BREVO_API_KEY is not set)
+SMTP_EMAIL=your@gmail.com
+SMTP_PASSWORD=your-gmail-app-password
 ```
 
 ### 3. Set Up PostgreSQL
@@ -267,10 +269,7 @@ The app starts at **http://localhost:5000**
 
 ## 🔌 API Reference
 
-All API endpoints require the header:
-```
-X-API-KEY: my-secret-key
-```
+All `/api/*` endpoints except signup, login and password reset require a logged-in session (the Flask session cookie set by `/api/login`).
 
 ### Authentication
 
@@ -353,7 +352,7 @@ CREATE TABLE users (
     id         SERIAL PRIMARY KEY,
     username   TEXT UNIQUE NOT NULL,
     email      TEXT UNIQUE NOT NULL,
-    password   TEXT NOT NULL,          -- bcrypt hashed
+    password   TEXT NOT NULL,          -- werkzeug salted hash (scrypt)
     created_at TEXT
 );
 
@@ -486,11 +485,12 @@ CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000", "--timeout", "300"]
 | `GROQ_MODEL` | `llama3-8b-8192` | LLM model ID |
 | `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | HuggingFace embedding model |
 | `PDF_DIR` | `data` | Directory containing PDF textbooks |
-| `SECRET_KEY` | `fallback-secret-key` | Flask session secret |
-| `MAIL_SERVER` | — | SMTP server for emails |
-| `MAIL_PORT` | `587` | SMTP port |
-| `MAIL_USERNAME` | — | SMTP username |
-| `MAIL_PASSWORD` | — | SMTP app password |
+| `SECRET_KEY` | — | **Required.** Flask session secret; the app refuses to start without it |
+| `BREVO_API_KEY` | — | Brevo API key; when set, emails go over HTTPS (needed on Render's free plan) |
+| `MAIL_FROM` | `SMTP_EMAIL` | Sender address; must be verified in Brevo |
+| `APP_URL` | — | Public URL, used for the sign-in link in the welcome email |
+| `SMTP_EMAIL` | — | Gmail address for the local SMTP fallback |
+| `SMTP_PASSWORD` | — | Gmail app password for the local SMTP fallback |
 
 ---
 
